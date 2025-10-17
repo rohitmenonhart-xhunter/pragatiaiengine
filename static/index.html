@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pragati AI - Multi-Agent Validation System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            color: #1a1a1a;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: -0.5px;
+        }
+
+        .tagline {
+            font-size: 14px;
+            color: #666;
+            margin-top: 4px;
+            font-weight: 400;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .main-content {
+            padding: 40px 0;
+        }
+
+        .hero-section {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .hero-title {
+            font-size: 48px;
+            font-weight: 300;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+
+        .hero-subtitle {
+            font-size: 18px;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto 40px;
+            font-weight: 400;
+        }
+
+        .form-section {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 40px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .input-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            font-family: inherit;
+        }
+
+        .tab-button:hover {
+            color: #1a1a1a;
+        }
+
+        .tab-button.active {
+            color: #1a1a1a;
+            border-bottom-color: #1a1a1a;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .file-upload-area {
+            border: 3px dashed #e0e0e0;
+            border-radius: 12px;
+            padding: 60px 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #fafafa;
+        }
+
+        .file-upload-area:hover {
+            border-color: #1a1a1a;
+            background: #f5f5f5;
+        }
+
+        .file-upload-area.drag-over {
+            border-color: #1a1a1a;
+            background: #f0f0f0;
+        }
+
+        .upload-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .upload-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .upload-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-selected {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 16px;
+        }
+
+        .file-size {
+            color: #666;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .remove-file {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .remove-file:hover {
+            background: #d32f2f;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #1a1a1a;
+            background: #ffffff;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #1a1a1a;
+            box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: #1a1a1a;
+            color: #ffffff;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: inherit;
+        }
+
+        .btn:hover {
+            background: #333;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(26, 26, 26, 0.2);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #1a1a1a;
+            margin-left: 12px;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .results-section {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 40px;
+            border: 1px solid #f0f0f0;
+            display: none;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .results-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .overall-score {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .score-value {
+            font-size: 48px;
+            font-weight: 300;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .score-label {
+            font-size: 14px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cluster-scores {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .cluster-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+
+        .cluster-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cluster-score {
+            font-size: 24px;
+            font-weight: 300;
+            color: #1a1a1a;
+        }
+
+        .summary-section {
+            margin-bottom: 30px;
+        }
+
+        .summary-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+        }
+
+        .summary-content {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.8;
+            white-space: pre-line;
+        }
+
+        .recommendations, .risks, .insights {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .list-item {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #1a1a1a;
+            border-left: 3px solid #1a1a1a;
+        }
+
+        .log-section {
+            background: #1a1a1a;
+            color: #ffffff;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        .log-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .log-clear {
+            background: #333;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .log-content {
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 4px 0;
+        }
+
+        .log-timestamp {
+            color: #888;
+            margin-right: 8px;
+        }
+
+        .log-agent {
+            color: #4caf50;
+            font-weight: 600;
+        }
+
+        .log-message {
+            color: #ffffff;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f0f0f0;
+            border-top: 4px solid #1a1a1a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 16px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 36px;
+            }
+            
+            .form-section, .results-section, .log-section {
+                padding: 20px;
+            }
+            
+            .cluster-scores {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div>
+                    <div class="logo">PRAGATI AI</div>
+                    <div class="tagline">Multi-Agent Validation System</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <a href="reports.html" style="
+                        text-decoration: none;
+                        color: #1a1a1a;
+                        padding: 8px 20px;
+                        border: 2px solid #1a1a1a;
+                        border-radius: 6px;
+                        font-weight: 600;
+                        font-size: 14px;
+                        transition: all 0.3s ease;
+                    " onmouseover="this.style.background='#1a1a1a'; this.style.color='white'" 
+                       onmouseout="this.style.background='transparent'; this.style.color='#1a1a1a'">
+                        📊 View Reports
+                    </a>
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span>System Online</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <h1 class="hero-title">AI-Powered Idea Validation</h1>
+                <p class="hero-subtitle">
+                    Comprehensive evaluation by 109+ specialized AI agents providing detailed insights, 
+                    recommendations, and market analysis for your startup ideas.
+                </p>
+            </section>
+
+            <!-- Form Section -->
+            <section class="form-section">
+                <!-- Input Method Tabs -->
+                <div class="input-tabs">
+                    <button class="tab-button active" onclick="switchTab('manual')">✍️ Manual Input</button>
+                    <button class="tab-button" onclick="switchTab('upload')">📄 Upload Pitch Deck</button>
+                </div>
+
+                <!-- Manual Input Tab -->
+                <div id="manualTab" class="tab-content active">
+                    <form id="validationForm">
+                        <div class="form-group">
+                            <label class="form-label" for="userId">User ID *</label>
+                            <input 
+                                type="text" 
+                                id="userId" 
+                                name="userId" 
+                                class="form-input" 
+                                placeholder="Enter your unique user ID"
+                                required
+                            >
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="reportTitle">Report Title *</label>
+                            <input 
+                                type="text" 
+                                id="reportTitle" 
+                                name="reportTitle" 
+                                class="form-input" 
+                                placeholder="Enter a title for this validation report"
+                                required
+                            >
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="ideaName">Idea Name *</label>
+                            <input 
+                                type="text" 
+                                id="ideaName" 
+                                name="ideaName" 
+                                class="form-input" 
+                                placeholder="Enter your startup idea name"
+                                required
+                            >
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="ideaConcept">Idea Description *</label>
+                            <textarea 
+                                id="ideaConcept" 
+                                name="ideaConcept" 
+                                class="form-input form-textarea" 
+                                placeholder="Describe your startup idea in detail. Include the problem you're solving, your solution, target market, and business model."
+                                required
+                            ></textarea>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn" id="validateBtn">
+                                Validate Idea
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="generatePdfBtn" style="display: none;">
+                                Generate PDF Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Pitch Deck Upload Tab -->
+                <div id="uploadTab" class="tab-content">
+                    <form id="pitchDeckForm">
+                        <div class="form-group">
+                            <label class="form-label" for="uploadUserId">User ID *</label>
+                            <input 
+                                type="text" 
+                                id="uploadUserId" 
+                                name="uploadUserId" 
+                                class="form-input" 
+                                placeholder="Enter your unique user ID"
+                                required
+                            >
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="uploadReportTitle">Report Title *</label>
+                            <input 
+                                type="text" 
+                                id="uploadReportTitle" 
+                                name="uploadReportTitle" 
+                                class="form-input" 
+                                placeholder="Enter a title for this validation report"
+                                required
+                            >
+                        </div>
+                        
+                        <div class="file-upload-area" id="uploadArea" onclick="document.getElementById('pitchDeckFile').click()">
+                            <div class="upload-icon">📁</div>
+                            <div class="upload-title">Upload Your Pitch Deck</div>
+                            <div class="upload-subtitle">
+                                Drag and drop your PDF or PowerPoint file here, or click to browse
+                            </div>
+                            <div class="upload-subtitle">
+                                Supported formats: PDF, PPT, PPTX • Max size: 50MB
+                            </div>
+                        </div>
+                        
+                        <input 
+                            type="file" 
+                            id="pitchDeckFile" 
+                            class="file-input" 
+                            accept=".pdf,.ppt,.pptx"
+                            onchange="handleFileSelect(event)"
+                        >
+                        
+                        <div class="file-selected" id="fileSelected">
+                            <div class="file-info">
+                                <div>
+                                    <div class="file-name" id="fileName">filename.pdf</div>
+                                    <div class="file-size" id="fileSize">0 MB</div>
+                                </div>
+                                <button type="button" class="remove-file" onclick="removeFile()">Remove</button>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center" style="margin-top: 30px;">
+                            <button type="submit" class="btn" id="validateDeckBtn">
+                                Validate Pitch Deck
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Loading Section -->
+            <section class="loading" id="loadingSection">
+                <div class="spinner"></div>
+                <div class="loading-text">Running 109+ AI agents for comprehensive validation...</div>
+            </section>
+
+            <!-- Log Section -->
+            <section class="log-section" id="logSection" style="display: none;">
+                <div class="log-header">
+                    <div class="log-title">Agent Activity Log</div>
+                    <div>
+                        <button class="log-clear" onclick="testSSE()">Test SSE</button>
+                        <button class="log-clear" onclick="clearLog()">Clear Log</button>
+                    </div>
+                </div>
+                <div class="log-content" id="logContent">
+                    <!-- Log entries will be added here -->
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection">
+                <div class="results-header">
+                    <h2 class="results-title">Validation Results</h2>
+                    <button class="btn btn-secondary" id="downloadPdfBtn" style="display: none;">
+                        Download PDF
+                    </button>
+                </div>
+
+                <!-- Overall Score -->
+                <div class="overall-score">
+                    <div class="score-value" id="overallScore">-</div>
+                    <div class="score-label">Overall Score</div>
+                </div>
+
+                <!-- Cluster Scores -->
+                <div class="cluster-scores" id="clusterScores">
+                    <!-- Cluster cards will be added here -->
+                </div>
+
+                <!-- Summary -->
+                <div class="summary-section">
+                    <h3 class="summary-title">Executive Summary</h3>
+                    <div class="summary-content" id="overallSummary">
+                        <!-- Summary will be added here -->
+                    </div>
+                </div>
+
+                <!-- Recommendations -->
+                <div class="recommendations">
+                    <h3 class="section-title">Key Recommendations</h3>
+                    <div id="recommendationsList">
+                        <!-- Recommendations will be added here -->
+                    </div>
+                </div>
+
+                <!-- Critical Risks -->
+                <div class="risks">
+                    <h3 class="section-title">Critical Risks</h3>
+                    <div id="risksList">
+                        <!-- Risks will be added here -->
+                    </div>
+                </div>
+
+                <!-- Market Insights -->
+                <div class="insights">
+                    <h3 class="section-title">Market Insights</h3>
+                    <div id="insightsList">
+                        <!-- Insights will be added here -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        let currentValidationResult = null;
+        let currentPdfUrl = null;
+        let eventSource = null;
+        let selectedFile = null;
+
+        // Tab switching
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.getElementById('manualTab').classList.remove('active');
+            document.getElementById('uploadTab').classList.remove('active');
+            
+            if (tab === 'manual') {
+                document.getElementById('manualTab').classList.add('active');
+            } else {
+                document.getElementById('uploadTab').classList.add('active');
+            }
+        }
+
+        // File selection handling
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Validate file type
+            const validTypes = ['.pdf', '.ppt', '.pptx'];
+            const fileName = file.name.toLowerCase();
+            const isValid = validTypes.some(type => fileName.endsWith(type));
+            
+            if (!isValid) {
+                alert('Invalid file type. Please upload a PDF or PowerPoint file.');
+                return;
+            }
+            
+            // Validate file size (50MB max)
+            const maxSize = 50 * 1024 * 1024; // 50MB
+            if (file.size > maxSize) {
+                alert('File too large. Maximum size is 50MB.');
+                return;
+            }
+            
+            selectedFile = file;
+            
+            // Display file info
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+            document.getElementById('fileSelected').style.display = 'block';
+            document.getElementById('uploadArea').style.display = 'none';
+        }
+
+        // Remove selected file
+        function removeFile() {
+            selectedFile = null;
+            document.getElementById('pitchDeckFile').value = '';
+            document.getElementById('fileSelected').style.display = 'none';
+            document.getElementById('uploadArea').style.display = 'block';
+        }
+
+        // Drag and drop handling
+        const uploadArea = document.getElementById('uploadArea');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('pitchDeckFile').files = files;
+                handleFileSelect({ target: { files: files } });
+            }
+        });
+
+        // Pitch deck form submission
+        document.getElementById('pitchDeckForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const userId = document.getElementById('uploadUserId').value.trim();
+            const title = document.getElementById('uploadReportTitle').value.trim();
+            
+            if (!userId || !title) {
+                alert('Please fill in User ID and Report Title');
+                return;
+            }
+            
+            if (!selectedFile) {
+                alert('Please select a pitch deck file to upload');
+                return;
+            }
+            
+            await validatePitchDeck(selectedFile, userId, title);
+        });
+
+        // Manual form submission
+        document.getElementById('validationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const userId = document.getElementById('userId').value.trim();
+            const title = document.getElementById('reportTitle').value.trim();
+            const ideaName = document.getElementById('ideaName').value.trim();
+            const ideaConcept = document.getElementById('ideaConcept').value.trim();
+            
+            if (!userId || !title || !ideaName || !ideaConcept) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            await validateIdea(userId, title, ideaName, ideaConcept);
+        });
+
+        // PDF generation
+        document.getElementById('generatePdfBtn').addEventListener('click', async function() {
+            if (!currentValidationResult) return;
+            
+            const ideaName = document.getElementById('ideaName').value;
+            const ideaConcept = document.getElementById('ideaConcept').value;
+            
+            await generatePdf(ideaName, ideaConcept);
+        });
+
+        // PDF download
+        document.getElementById('downloadPdfBtn').addEventListener('click', function() {
+            if (currentPdfUrl) {
+                window.open(currentPdfUrl, '_blank');
+            }
+        });
+
+        async function validatePitchDeck(file, userId, title) {
+            // Show loading and log sections
+            document.getElementById('loadingSection').style.display = 'block';
+            document.getElementById('logSection').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+            
+            // Clear previous results
+            currentValidationResult = null;
+            currentPdfUrl = null;
+            document.getElementById('generatePdfBtn').style.display = 'none';
+            document.getElementById('downloadPdfBtn').style.display = 'none';
+            
+            // Clear log
+            clearLog();
+            
+            // Start SSE connection for real-time updates
+            startAgentStream();
+            
+            // Add initial log entries
+            addLogEntry('System', `📄 Processing pitch deck: ${file.name}`);
+            addLogEntry('System', 'Extracting idea information using AI...');
+            
+            try {
+                // Create FormData and append the file and metadata
+                const formData = new FormData();
+                formData.append('pitch_deck', file);
+                formData.append('user_id', userId);
+                formData.append('title', title);
+                
+                const response = await fetch('/api/validate-pitch-deck', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                currentValidationResult = result;
+                
+                // Add extracted info to log
+                if (result.extracted_idea_name) {
+                    addLogEntry('System', `✅ Extracted Idea: ${result.extracted_idea_name}`);
+                }
+                
+                // Add database save info
+                if (result.report_id) {
+                    addLogEntry('System', `💾 Report saved to database: ${result.report_id}`);
+                    addLogEntry('System', `📊 Access report data: /api/report/${result.report_id}`);
+                }
+                
+                // Add completion log entry
+                addLogEntry('System', `✅ Validation completed! Overall score: ${result.overall_score}/5.0`);
+                
+                // Display results
+                displayResults(result);
+                
+                // Show PDF generation button
+                document.getElementById('generatePdfBtn').style.display = 'inline-block';
+                
+                // Fill in the manual tab fields with extracted data (for reference)
+                if (result.extracted_idea_name) {
+                    document.getElementById('ideaName').value = result.extracted_idea_name;
+                    document.getElementById('userId').value = userId;
+                    document.getElementById('reportTitle').value = title;
+                }
+                
+            } catch (error) {
+                console.error('Pitch deck validation error:', error);
+                addLogEntry('System', `❌ Error: ${error.message}`);
+                alert(`Failed to process pitch deck: ${error.message}`);
+            } finally {
+                // Hide loading
+                document.getElementById('loadingSection').style.display = 'none';
+                
+                // Stop SSE connection
+                stopAgentStream();
+            }
+        }
+
+        async function validateIdea(userId, title, ideaName, ideaConcept) {
+            // Show loading and log sections
+            document.getElementById('loadingSection').style.display = 'block';
+            document.getElementById('logSection').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+            
+            // Clear previous results
+            currentValidationResult = null;
+            currentPdfUrl = null;
+            document.getElementById('generatePdfBtn').style.display = 'none';
+            document.getElementById('downloadPdfBtn').style.display = 'none';
+            
+            // Clear log
+            clearLog();
+            
+            // Start SSE connection for real-time updates
+            startAgentStream();
+            
+            // Add initial log entry
+            addLogEntry('System', 'Starting validation process...');
+            
+            try {
+                const response = await fetch('/api/validate-idea', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        title: title,
+                        idea_name: ideaName,
+                        idea_concept: ideaConcept
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                currentValidationResult = result;
+                
+                // Add database save info
+                if (result.report_id) {
+                    addLogEntry('System', `💾 Report saved to database: ${result.report_id}`);
+                    addLogEntry('System', `📊 Access report data: /api/report/${result.report_id}`);
+                }
+                
+                // Add completion log entry
+                addLogEntry('System', `✅ Validation completed! Overall score: ${result.overall_score}/5.0`);
+                
+                // Display results
+                displayResults(result);
+                
+                // Show PDF generation button
+                document.getElementById('generatePdfBtn').style.display = 'inline-block';
+                
+            } catch (error) {
+                console.error('Validation error:', error);
+                addLogEntry('System', `❌ Error: ${error.message}`);
+                alert(`Validation failed: ${error.message}`);
+            } finally {
+                // Hide loading
+                document.getElementById('loadingSection').style.display = 'none';
+                
+                // Stop SSE connection
+                stopAgentStream();
+            }
+        }
+
+        async function generatePdf(ideaName, ideaConcept) {
+            const btn = document.getElementById('generatePdfBtn');
+            const originalText = btn.textContent;
+            
+            btn.disabled = true;
+            btn.textContent = 'Generating PDF...';
+            
+            try {
+                const response = await fetch('/api/generate-pdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        idea_name: ideaName,
+                        idea_concept: ideaConcept
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                currentPdfUrl = result.pdf_url;
+                
+                // Show download button
+                document.getElementById('downloadPdfBtn').style.display = 'inline-block';
+                
+                addLogEntry('System', `PDF report generated: ${result.filename}`);
+                
+            } catch (error) {
+                console.error('PDF generation error:', error);
+                addLogEntry('System', `PDF generation failed: ${error.message}`);
+                alert('PDF generation failed. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        function displayResults(result) {
+            // Overall score
+            document.getElementById('overallScore').textContent = `${result.overall_score}/5.0`;
+            
+            // Cluster scores
+            const clusterScoresContainer = document.getElementById('clusterScores');
+            clusterScoresContainer.innerHTML = '';
+            
+            for (const [cluster, score] of Object.entries(result.cluster_scores)) {
+                const clusterCard = document.createElement('div');
+                clusterCard.className = 'cluster-card';
+                clusterCard.innerHTML = `
+                    <div class="cluster-name">${cluster}</div>
+                    <div class="cluster-score">${score.toFixed(2)}/5.0</div>
+                `;
+                clusterScoresContainer.appendChild(clusterCard);
+            }
+            
+            // Overall summary
+            document.getElementById('overallSummary').textContent = result.overall_summary || 'No summary available';
+            
+            // Recommendations
+            const recommendationsList = document.getElementById('recommendationsList');
+            recommendationsList.innerHTML = '';
+            if (result.key_recommendations && result.key_recommendations.length > 0) {
+                result.key_recommendations.forEach(rec => {
+                    const item = document.createElement('div');
+                    item.className = 'list-item';
+                    item.textContent = rec;
+                    recommendationsList.appendChild(item);
+                });
+            } else {
+                recommendationsList.innerHTML = '<div class="list-item">No recommendations available</div>';
+            }
+            
+            // Risks
+            const risksList = document.getElementById('risksList');
+            risksList.innerHTML = '';
+            if (result.critical_risks && result.critical_risks.length > 0) {
+                result.critical_risks.forEach(risk => {
+                    const item = document.createElement('div');
+                    item.className = 'list-item';
+                    item.textContent = risk;
+                    risksList.appendChild(item);
+                });
+            } else {
+                risksList.innerHTML = '<div class="list-item">No critical risks identified</div>';
+            }
+            
+            // Market insights
+            const insightsList = document.getElementById('insightsList');
+            insightsList.innerHTML = '';
+            if (result.market_insights && result.market_insights.length > 0) {
+                result.market_insights.forEach(insight => {
+                    const item = document.createElement('div');
+                    item.className = 'list-item';
+                    item.textContent = insight;
+                    insightsList.appendChild(item);
+                });
+            } else {
+                insightsList.innerHTML = '<div class="list-item">No market insights available</div>';
+            }
+            
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        function addLogEntry(agent, message) {
+            const logContent = document.getElementById('logContent');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            
+            const timestamp = new Date().toLocaleTimeString();
+            entry.innerHTML = `
+                <span class="log-timestamp">[${timestamp}]</span>
+                <span class="log-agent">${agent}:</span>
+                <span class="log-message">${message}</span>
+            `;
+            
+            logContent.appendChild(entry);
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('logContent').innerHTML = '';
+        }
+
+        function startAgentStream() {
+            // Close existing connection
+            stopAgentStream();
+            
+            // Start new SSE connection
+            eventSource = new EventSource('/api/agent-stream');
+            
+            eventSource.onmessage = function(event) {
+                try {
+                    console.log('Raw SSE message:', event.data); // Debug logging
+                    
+                    // Skip empty messages
+                    if (!event.data || event.data.trim() === '') {
+                        return;
+                    }
+                    
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === 'heartbeat') {
+                        console.log('Heartbeat received'); // Debug logging
+                        return; // Ignore heartbeat messages
+                    }
+                    
+                    // Add message to log with appropriate styling
+                    const logContent = document.getElementById('logContent');
+                    const entry = document.createElement('div');
+                    entry.className = 'log-entry';
+                    
+                    const timestamp = new Date().toLocaleTimeString();
+                    const messageClass = data.type === 'system' ? 'log-message' : 'log-agent';
+                    
+                    entry.innerHTML = `
+                        <span class="log-timestamp">[${timestamp}]</span>
+                        <span class="${messageClass}">${data.agent}:</span>
+                        <span class="log-message">${data.message}</span>
+                    `;
+                    
+                    logContent.appendChild(entry);
+                    logContent.scrollTop = logContent.scrollHeight;
+                    
+                } catch (error) {
+                    console.error('Error parsing SSE message:', error);
+                    console.error('Raw message data:', event.data);
+                }
+            };
+            
+            eventSource.onerror = function(event) {
+                console.error('SSE connection error:', event);
+                // Try to reconnect after a delay
+                setTimeout(() => {
+                    if (eventSource && eventSource.readyState === EventSource.CLOSED) {
+                        startAgentStream();
+                    }
+                }, 3000);
+            };
+        }
+
+        function stopAgentStream() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+        }
+
+        async function testSSE() {
+            // Start SSE connection if not already connected
+            if (!eventSource) {
+                startAgentStream();
+            }
+            
+            // Send test message
+            try {
+                const response = await fetch('/api/test-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        agent: 'Test System',
+                        message: 'SSE connection test message',
+                        type: 'system'
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('Test message sent successfully');
+                } else {
+                    console.error('Failed to send test message');
+                }
+            } catch (error) {
+                console.error('Error sending test message:', error);
+            }
+        }
+    </script>
+</body>
+</html>

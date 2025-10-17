@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validation Reports - Pragati AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            color: #1a1a1a;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: #ffffff;
+            border-bottom: 2px solid #e0e0e0;
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-link {
+            color: #666;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: #f0f0f0;
+            color: #1a1a1a;
+        }
+
+        /* User Input Section */
+        .user-input-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 30px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #1a1a1a;
+            box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
+        }
+
+        .btn {
+            background: #1a1a1a;
+            color: #ffffff;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            background: #333;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(26, 26, 26, 0.2);
+        }
+
+        /* Reports List */
+        .reports-section {
+            display: none;
+        }
+
+        .reports-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .reports-title {
+            font-size: 32px;
+            font-weight: 300;
+            color: #1a1a1a;
+        }
+
+        .reports-count {
+            font-size: 16px;
+            color: #666;
+        }
+
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .report-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .report-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+            border-color: #1a1a1a;
+        }
+
+        .report-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .report-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .report-score {
+            font-size: 32px;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .score-excellent { background: #e8f5e9; color: #2e7d32; }
+        .score-good { background: #fff3e0; color: #e65100; }
+        .score-poor { background: #ffebee; color: #c62828; }
+
+        .report-idea {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .report-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .report-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-manual { background: #e3f2fd; color: #1565c0; }
+        .badge-pitch-deck { background: #f3e5f5; color: #6a1b9a; }
+
+        /* Report Viewer */
+        .report-viewer {
+            display: none;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .viewer-header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+            color: white;
+            padding: 40px;
+            position: relative;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .viewer-title {
+            font-size: 36px;
+            font-weight: 300;
+            margin-bottom: 16px;
+        }
+
+        .viewer-subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .viewer-content {
+            padding: 40px;
+        }
+
+        /* Executive Summary */
+        .executive-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .metric-card {
+            background: #f8f9fa;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 48px;
+            font-weight: 300;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-icon {
+            font-size: 28px;
+        }
+
+        /* Cluster Grid */
+        .cluster-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .cluster-card {
+            padding: 24px;
+            border-radius: 12px;
+            border-left: 4px solid;
+        }
+
+        .cluster-card.good { 
+            background: #e8f5e9; 
+            border-left-color: #4caf50; 
+        }
+
+        .cluster-card.moderate { 
+            background: #fff3e0; 
+            border-left-color: #ff9800; 
+        }
+
+        .cluster-card.poor { 
+            background: #ffebee; 
+            border-left-color: #f44336; 
+        }
+
+        .cluster-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+        }
+
+        .cluster-score {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .cluster-status {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* List Items */
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .item {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 3px solid #1a1a1a;
+        }
+
+        .item.high-priority { border-left-color: #f44336; }
+        .item.medium-priority { border-left-color: #ff9800; }
+        .item.low-priority { border-left-color: #4caf50; }
+
+        .item-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .item-content {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* Consensus Section */
+        .consensus-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .consensus-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .consensus-card.high { background: #e8f5e9; }
+        .consensus-card.low { background: #ffebee; }
+        .consensus-card.disputed { background: #fff3e0; }
+
+        /* Next Steps Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e0e0e0;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 24px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -35px;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            background: #1a1a1a;
+            border-radius: 50%;
+        }
+
+        .timeline-content {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 60px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f0f0f0;
+            border-top: 4px solid #1a1a1a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-text {
+            font-size: 18px;
+            color: #666;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .reports-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cluster-grid, .consensus-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .viewer-content {
+                padding: 20px;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            .header, .back-button, .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">PRAGATI AI</div>
+                <div class="nav-links">
+                    <a href="index.html" class="nav-link">New Validation</a>
+                    <a href="reports.html" class="nav-link">View Reports</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- User Input Section -->
+        <div class="user-input-section">
+            <div class="input-group">
+                <div class="form-group">
+                    <label class="form-label" for="userId">Enter User ID</label>
+                    <input 
+                        type="text" 
+                        id="userId" 
+                        class="form-input" 
+                        placeholder="e.g., user123"
+                    >
+                </div>
+                <button class="btn" onclick="loadUserReports()">Load Reports</button>
+            </div>
+        </div>
+
+        <!-- Reports List -->
+        <div class="reports-section" id="reportsSection">
+            <div class="reports-header">
+                <div>
+                    <h1 class="reports-title">Your Validation Reports</h1>
+                    <p class="reports-count" id="reportsCount">Loading...</p>
+                </div>
+            </div>
+            <div class="reports-grid" id="reportsGrid"></div>
+        </div>
+
+        <!-- Report Viewer -->
+        <div class="report-viewer" id="reportViewer">
+            <div class="viewer-header">
+                <button class="back-button" onclick="closeReport()">← Back to Reports</button>
+                <h1 class="viewer-title" id="viewerTitle">Loading...</h1>
+                <p class="viewer-subtitle" id="viewerSubtitle"></p>
+            </div>
+            <div class="viewer-content" id="viewerContent">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading report details...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUserId = null;
+        let allReports = [];
+
+        // Load reports for user
+        async function loadUserReports() {
+            const userId = document.getElementById('userId').value.trim();
+            
+            if (!userId) {
+                alert('Please enter a User ID');
+                return;
+            }
+
+            currentUserId = userId;
+            
+            // Show loading
+            document.getElementById('reportsSection').style.display = 'block';
+            document.getElementById('reportsGrid').innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading reports...</p></div>';
+            
+            try {
+                const response = await fetch(`/api/reports/${userId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load reports');
+                }
+                
+                const data = await response.json();
+                allReports = data.reports || [];
+                
+                displayReports(allReports);
+                
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                document.getElementById('reportsGrid').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <p class="empty-text">Failed to load reports. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display reports grid
+        function displayReports(reports) {
+            const grid = document.getElementById('reportsGrid');
+            const countEl = document.getElementById('reportsCount');
+            
+            if (reports.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📝</div>
+                        <p class="empty-text">No reports found for this user ID</p>
+                    </div>
+                `;
+                countEl.textContent = 'No reports found';
+                return;
+            }
+
+            countEl.textContent = `${reports.length} report${reports.length > 1 ? 's' : ''} found`;
+            
+            grid.innerHTML = reports.map(report => {
+                const score = report.overall_score || 0;
+                const scoreClass = score >= 4.0 ? 'score-excellent' : score >= 2.5 ? 'score-good' : 'score-poor';
+                const date = new Date(report.created_at).toLocaleDateString();
+                const sourceClass = report.source_type === 'pitch_deck' ? 'badge-pitch-deck' : 'badge-manual';
+                
+                return `
+                    <div class="report-card" onclick="viewReport('${report._id}')">
+                        <div class="report-card-header">
+                            <div>
+                                <h3 class="report-title">${report.title || 'Untitled Report'}</h3>
+                                <p class="report-idea">${report.idea_name || 'No idea name'}</p>
+                                <span class="report-badge ${sourceClass}">
+                                    ${report.source_type || 'manual'}
+                                </span>
+                            </div>
+                            <div class="report-score ${scoreClass}">
+                                ${score.toFixed(1)}
+                            </div>
+                        </div>
+                        <div class="report-meta">
+                            <span>📅 ${date}</span>
+                            <span>🎯 ${report.validation_outcome || 'N/A'}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // View specific report
+        async function viewReport(reportId) {
+            // Hide reports list, show viewer
+            document.getElementById('reportsSection').style.display = 'none';
+            document.getElementById('reportViewer').style.display = 'block';
+            
+            // Reset viewer
+            document.getElementById('viewerContent').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading report details...</p>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch(`/api/report/${reportId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load report');
+                }
+                
+                const report = await response.json();
+                displayReportDetails(report);
+                
+            } catch (error) {
+                console.error('Error loading report:', error);
+                document.getElementById('viewerContent').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">❌</div>
+                        <p class="empty-text">Failed to load report details</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display full report details
+        function displayReportDetails(report) {
+            const analysis = report.detailed_analysis || {};
+            const exec = analysis.executive_summary || {};
+            const params = analysis.parameters_validated || {};
+            const agentArgs = analysis.agent_arguments || {};
+            const performance = analysis.performance_analysis || {};
+            const recommendations = analysis.detailed_recommendations || [];
+            const nextSteps = analysis.next_steps || [];
+            const pitchImprovements = analysis.pitch_deck_improvements || [];
+            const insights = analysis.market_insights || [];
+            const risks = analysis.risk_assessment || {};
+
+            // Update header
+            document.getElementById('viewerTitle').textContent = analysis.title || report.title || 'Validation Report';
+            document.getElementById('viewerSubtitle').textContent = `${report.idea_name} • ${report.validation_outcome || 'N/A'}`;
+
+            // Build content
+            let html = '';
+
+            // Executive Summary
+            html += `
+                <div class="executive-summary">
+                    <div class="metric-card">
+                        <div class="metric-value">${(report.overall_score || 0).toFixed(1)}/5.0</div>
+                        <div class="metric-label">Overall Score</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${exec.agents_consulted || 109}</div>
+                        <div class="metric-label">Agents Consulted</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${report.validation_outcome || 'N/A'}</div>
+                        <div class="metric-label">Outcome</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${(exec.processing_time || 0).toFixed(1)}s</div>
+                        <div class="metric-label">Processing Time</div>
+                    </div>
+                </div>
+            `;
+
+            // Parameters Validated
+            if (params.cluster_breakdown) {
+                html += `
+                    <div class="section">
+                        <h2 class="section-title">
+                            <span class="section-icon">📊</span>
+                            Parameters Validated
+                        </h2>
+                        <p style="margin-bottom: 20px; color: #666;">
+                            <strong>${params.total_parameters || 0}</strong> parameters analyzed across <strong>${Object.keys(params.cluster_breakdown).length}</strong> clusters
+                        </p>
+                        <div class="cluster-grid">
+                `;
+
+                for (const [cluster, details] of Object.entries(params.cluster_breakdown)) {
+                    const score = details.score || 0;
+                    const statusClass = score >= 4.0 ? 'good' : score >= 2.5 ? 'moderate' : 'poor';
+                    
+                    html += `
+                        <div class="cluster-card ${statusClass}">
+                            <div class="cluster-name">${cluster}</div>
+                            <div class="cluster-score">${score.toFixed(2)}/5.0</div>
+                            <div class="cluster-status">${details.status || 'N/A'}</div>
+                            <div class="cluster-status">${details.parameters || 0} parameters</div>
+                        </div>
+                    `;
+                }
+
+                html += `</div></div>`;
+            }
+
+            // Agent Consensus
+            if (agentArgs.consensus_patterns) {
+                html += `
+                    <div class="section">
+                        <h2 class="section-title">
+                            <span class="section-icon">🤖</span>
+                            Agent Consensus Analysis
+                        </h2>
+                        <div class="consensus-grid">
+                            <div class="consensus-card high">
+                                <div class="metric-value">${agentArgs.consensus_patterns.strong_areas || 0}</div>
+                                <div class="metric-label">Strong Consensus</div>
+                            </div>
+                            <div class="consensus-card low">
+                                <div class="metric-value">${agentArgs.consensus_patterns.weak_areas || 0}</div>
+                                <div class="metric-label">Weak Areas</div>
+                            </div>
+                            <div class="consensus-card disputed">
+                                <div class="metric-value">${agentArgs.consensus_patterns.disputed_areas || 0}</div>
+                                <div class="metric-label">Disputed Topics</div>
+                            </div>
+                        </div>
+                `;
+
+                // High consensus topics
+                if (agentArgs.high_consensus_topics && agentArgs.high_consensus_topics.length > 0) {
+                    html += `
+                        <h3 style="margin: 20px 0 16px 0;">✅ High Consensus Topics</h3>
+                        <div class="item-list">
+                    `;
+                    
+                    agentArgs.high_consensus_topics.slice(0, 5).forEach(topic => {
+                        html += `
+                            <div class="item low-priority">
+                                <div class="item-title">${topic.parameter || 'Unknown'} (Score: ${(topic.score || 0).toFixed(2)})</div>
+                                <div class="item-content">${topic.explanation || 'No explanation available'}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div>`;
+                }
+
+                // Controversial topics
+                if (agentArgs.controversial_topics && agentArgs.controversial_topics.length > 0) {
+                    html += `
+                        <h3 style="margin: 20px 0 16px 0;">⚠️ Controversial Topics</h3>
+                        <div class="item-list">
+                    `;
+                    
+                    agentArgs.controversial_topics.slice(0, 5).forEach(topic => {
+                        html += `
+                            <div class="item medium-priority">
+                                <div class="item-title">${topic.parameter || 'Unknown'} (Score: ${(topic.score || 0).toFixed(2)})</div>
+                                <div class="item-content">${topic.explanation || 'No explanation available'}</div>
+                                <div class="item-content" style="margin-top: 8px; font-style: italic;">
+                                    Reason: ${topic.reason || 'Mixed opinions'}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div>`;
+                }
+
+                html += `</div>`;
+            }
+
+            // Performance Analysis
+            if (performance.good_areas || performance.bad_areas) {
+                html += `
+                    <div class="section">
+                        <h2 class="section-title">
+                            <span class="section-icon">📈</span>
+                            Performance Analysis
+                        </h2>
+                `;
+
+                // Good areas
+                if (performance.good_areas && performance.good_areas.length > 0) {
+                    html += `
+                        <h3 style="margin-bottom: 16px;">✅ Strong Areas</h3>
+                        <div class="item-list">
+                    `;
+                    
+                    performance.good_areas.forEach(area => {
+                        html += `
+                            <div class="item low-priority">
+                                <div class="item-title">${area.cluster || 'Unknown'} (Score: ${(area.score || 0).toFixed(2)})</div>
+                                <div class="item-content">${area.reason || ''}</div>
+                                ${area.key_strengths && area.key_strengths.length > 0 ? `
+                                    <div class="item-content" style="margin-top: 8px;">
+                                        <strong>Key Strengths:</strong>
+                                        <ul style="margin-left: 20px; margin-top: 4px;">
+                                            ${area.key_strengths.map(s => `<li>${s}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                                <div class="item-content" style="margin-top: 8px; font-style: italic;">
+                                    Impact: ${area.impact || 'Positive impact'}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div>`;
+                }
+
+                // Bad areas
+                if (performance.bad_areas && performance.bad_areas.length > 0) {
+                    html += `
+                        <h3 style="margin: 20px 0 16px 0;">❌ Areas Needing Improvement</h3>
+                        <div class="item-list">
+                    `;
+                    
+                    performance.bad_areas.forEach(area => {
+                        html += `
+                            <div class="item high-priority">
+                                <div class="item-title">${area.cluster || 'Unknown'} (Score: ${(area.score || 0).toFixed(2)})</div>
+                                <div class="item-content">${area.reason || ''}</div>
+                                ${area.key_weaknesses && area.key_weaknesses.length > 0 ? `
+                                    <div class="item-content" style="margin-top: 8px;">
+                                        <strong>Key Weaknesses:</strong>
+                                        <ul style="margin-left: 20px; margin-top: 4px;">
+                                            ${area.key_weaknesses.map(w => `<li>${w}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                                <div class="item-content" style="margin-top: 8px;">
+                                    <strong>Priority:</strong> ${area.improvement_priority || 'High'}
+                                </div>
+                                <div class="item-content" style="font-style: italic;">
+                                    Impact: ${area.impact || 'Requires attention'}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div>`;
+                }
+
+                html += `</div>`;
+            }
+
+            // Recommendations
+            if (recommendations.length > 0) {
+                html += `
+                    <div class="section">
+                        <h2 class="section-title">
+                            <span class="section-icon">💡</span>
+                            Detailed Recommendations
+                        </h2>
+                        <div class="item-list">
+                `;
+
+                recommendations.forEach(rec => {
+                    const priorityClass = rec.priority === 'High' ? 'high-priority' : rec.priority === 'Medium' ? 'medium-priority' : 'low-priority';
+                    
+                    html += `
+                        <div class="item ${priorityClass}">
+                            <div class="item-title">[${rec.priority || 'Medium'} Priority] ${rec.recommendation || 'No recommendation'}</div>
+                            <div class="item-content">Category: ${rec.category || 'General'}</div>
+                            ${rec.specific_actions && rec.specific_actions.length > 0 ? `
+                                <div class="item-content" style="margin-top: 8px;">
+                                    <strong>Specific Actions:</strong>
+                                    <ul style="margin-left: 20px; margin-top: 4px;">
+                                        ${rec.specific_actions.map(a => `<li>${a}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            <div class="item-content" style="margin-top: 8px; font-style: italic;">
+                                Expected Impact: ${rec.expected_impact || 'Positive impact on startup success'}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div></div>`;
+            }
+
+            // Next Steps
+            if (nextSteps.length > 0) {
+                html += `
+                    <div class="section">
+                        <h2 class="section-title">
+                            <span class="section-icon">🎯</span>
+                            Next Steps
+                        </h2>
+                        <div class="timeline">
+                `;
+
+                nextSteps.forEach(step => {
+                    html += `
+                        <div class="timeline-item">
+                            <div class="timeline-content">${step}</div>
+                        </div>
+                    `;
+                });
+
+                html += `</div></div>`;
+            }
+
+            // Pitch Deck Improvements
+            if (pitchImprovements.length > 0) {
+                html += `
+                    <div class="section">
+                        <h2 class="section-title">
+                            <span class="section-icon">📋</span>
+                            Pitch Deck Improvements
+                        </h2>
+                        <div class="item-list">
+                `;
+
+                pitchImprovements.forEach(improvement => {
+                    html += `
+                        <div class="item">
+                            <div class="item-title">Slide: ${improvement.slide || 'Unknown'}</div>
+                            <div class="item-content"><strong>Improvement:</strong> ${improvement.improvement || ''}</div>
+                            <div class="item-content" style="margin-top: 8px;">
+                                <strong>Action:</strong> ${improvement.specific_action || ''}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div></div>`;
+            }
+
+            // Market Insights
+            if (insights.length > 0) {
+                html += `
+                    <div class="section">
+                        <h2 class="section-title">
+                            <span class="section-icon">💼</span>
+                            Market Insights
+                        </h2>
+                        <div class="item-list">
+                `;
+
+                insights.forEach(insight => {
+                    html += `<div class="item"><div class="item-content">${insight}</div></div>`;
+                });
+
+                html += `</div></div>`;
+            }
+
+            // Risk Assessment
+            if (risks.critical_risks && risks.critical_risks.length > 0) {
+                html += `
+                    <div class="section">
+                        <h2 class="section-title">
+                            <span class="section-icon">⚠️</span>
+                            Risk Assessment
+                        </h2>
+                        <p style="margin-bottom: 20px;">
+                            <strong>Overall Risk Level:</strong> 
+                            <span style="
+                                display: inline-block;
+                                padding: 6px 16px;
+                                border-radius: 12px;
+                                background: ${risks.risk_level === 'Low Risk' ? '#e8f5e9' : risks.risk_level === 'Moderate Risk' ? '#fff3e0' : '#ffebee'};
+                                color: ${risks.risk_level === 'Low Risk' ? '#2e7d32' : risks.risk_level === 'Moderate Risk' ? '#e65100' : '#c62828'};
+                                font-weight: 600;
+                            ">
+                                ${risks.risk_level || 'Unknown'}
+                            </span>
+                        </p>
+                        <div class="item-list">
+                `;
+
+                risks.critical_risks.forEach(risk => {
+                    html += `
+                        <div class="item high-priority">
+                            <div class="item-content">${risk}</div>
+                        </div>
+                    `;
+                });
+
+                html += `</div></div>`;
+            }
+
+            // Footer metadata
+            html += `
+                <div class="section" style="border-top: 2px solid #e0e0e0; padding-top: 30px; text-align: center; color: #999;">
+                    <p>Report ID: ${report._id || 'Unknown'}</p>
+                    <p>Generated: ${new Date(report.created_at).toLocaleString()}</p>
+                    <p>User ID: ${report.user_id || 'Unknown'}</p>
+                    <p style="margin-top: 12px;">Pragati AI Engine v${report.version || '3.0.0'}</p>
+                </div>
+            `;
+
+            document.getElementById('viewerContent').innerHTML = html;
+        }
+
+        // Close report viewer
+        function closeReport() {
+            document.getElementById('reportViewer').style.display = 'none';
+            document.getElementById('reportsSection').style.display = 'block';
+        }
+
+        // Check URL for user_id parameter
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const userId = urlParams.get('user_id');
+            
+            if (userId) {
+                document.getElementById('userId').value = userId;
+                loadUserReports();
+            }
+        });
+    </script>
+</body>
+</html>
+

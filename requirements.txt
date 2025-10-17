@@ -1,0 +1,38 @@
+# Core Web Framework
+Flask>=2.3.0
+flask-cors>=4.0.0
+
+# AI and LLM Dependencies
+openai>=1.12.0
+langchain-openai>=0.0.5
+crewai>=0.80.0
+crewai-tools>=0.12.0
+
+# Google AI (optional backup)
+google-generativeai>=0.3.0
+
+# Firebase (if needed)
+firebase-admin>=6.0.0
+
+# Environment and Configuration
+python-dotenv>=1.0.0
+
+# Data Processing
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Async Support
+asyncio>=3.4.3
+
+# PDF Generation
+reportlab>=4.0.0
+
+# Pitch Deck Processing
+python-pptx>=0.6.21
+pypdf>=3.0.0
+pdfplumber>=0.9.0
+
+# Database
+pymongo>=4.6.0
+motor>=3.3.0
+

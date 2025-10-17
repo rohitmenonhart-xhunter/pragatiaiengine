@@ -1,0 +1,152 @@
+================================================================================
+                    PRAGATI AI ENGINE - QUICK REFERENCE
+================================================================================
+
+🚀 START SERVER
+--------------------------------------------------------------------------------
+conda activate pragatiaiengine
+cd /Users/rohit/Desktop/pragatiaiengine
+python app/app_v3.py
+
+
+📊 KEY ENDPOINTS
+--------------------------------------------------------------------------------
+Health Check:          GET  http://localhost:5001/health
+JSON Validation:       POST http://localhost:5001/api/validate-idea
+Pitch Deck Validation: POST http://localhost:5001/api/validate-pitch-deck
+System Info:           GET  http://localhost:5001/api/system-info
+API Docs:              GET  http://localhost:5001/api
+
+
+💻 USAGE EXAMPLES
+--------------------------------------------------------------------------------
+
+1. JSON API (Manual Input)
+   curl -X POST http://localhost:5001/api/validate-idea \
+     -H "Content-Type: application/json" \
+     -d '{
+       "idea_name": "AI EdTech Platform",
+       "idea_concept": "An AI-powered platform for personalized learning..."
+     }'
+
+2. Pitch Deck Upload (NEW!)
+   curl -X POST http://localhost:5001/api/validate-pitch-deck \
+     -F "pitch_deck=@my_pitch_deck.pdf"
+
+3. With Custom Weights
+   curl -X POST http://localhost:5001/api/validate-idea \
+     -H "Content-Type: application/json" \
+     -d '{
+       "idea_name": "Startup",
+       "idea_concept": "Description...",
+       "custom_weights": {
+         "Core Idea": 20,
+         "Market Opportunity": 25
+       }
+     }'
+
+
+📈 EVALUATION CLUSTERS (109 Agents)
+--------------------------------------------------------------------------------
+1. Core Idea (15%)           - 14 agents - Novelty, Problem-Solution Fit, UX
+2. Market Opportunity (20%)  - 17 agents - Market Validation, India Focus, PMF
+3. Execution (20%)           - 18 agents - Technical, Operational, Scalability
+4. Business Model (15%)      - 12 agents - Financial Viability, Defensibility
+5. Team (10%)                - 12 agents - Founder Fit, Culture
+6. Compliance (10%)          - 18 agents - Regulatory, ESG, Ecosystem
+7. Risk & Strategy (10%)     - 18 agents - Risk, Investor Appeal, Alignment
+
+
+🎯 VALIDATION OUTCOMES
+--------------------------------------------------------------------------------
+Score    Outcome      Meaning
+5.0-4.5  EXCELLENT    Exceptional potential, ready for launch
+4.4-3.5  GOOD         Strong potential, recommended for development
+3.4-2.5  MODERATE     Moderate potential, improvements needed
+2.4-1.5  WEAK         Limited potential, substantial challenges
+1.4-1.0  POOR         Very limited potential, major issues
+
+
+🔧 TROUBLESHOOTING
+--------------------------------------------------------------------------------
+Issue: Server not starting
+Fix: Check if port 5001 is available, verify .env file exists
+
+Issue: OpenAI API errors
+Fix: Verify OPENAI_API_KEY in .env file, check API quota
+
+Issue: Pitch deck upload fails
+Fix: Check file format (PDF/PPT/PPTX), verify file size < 50MB
+
+Issue: Interactive prompts appearing
+Fix: Verify .env has CREWAI_TRACING_ENABLED=false
+
+
+📦 DEPENDENCIES
+--------------------------------------------------------------------------------
+Core:     Flask, CrewAI, OpenAI, LangChain
+NEW:      python-pptx, pypdf, pdfplumber (for pitch decks)
+Total:    100+ packages
+
+
+⚙️ ENVIRONMENT VARIABLES (.env)
+--------------------------------------------------------------------------------
+OPENAI_API_KEY=sk-...                     # REQUIRED
+FLASK_ENV=development
+PORT=5001
+CREWAI_TRACING_ENABLED=false             # CRITICAL! Disables prompts
+CREWAI_DISABLE_TELEMETRY=true
+CREWAI_PROMPT_EXECUTION_TRACES=false
+
+
+📚 DOCUMENTATION
+--------------------------------------------------------------------------------
+Complete Overview:    PROJECT_OVERVIEW.md (317 lines)
+Pitch Deck Guide:     PITCH_DECK_GUIDE.md
+Deployment Guide:     DEPLOYMENT_READY.md
+Summary:              SUMMARY.md
+This Reference:       QUICK_REFERENCE.txt
+
+
+🧪 TESTING
+--------------------------------------------------------------------------------
+./test_deployment.sh                     # Run full deployment test
+python test_performance.py               # Run performance test
+curl http://localhost:5001/health        # Quick health check
+
+
+📊 PERFORMANCE METRICS
+--------------------------------------------------------------------------------
+Pitch Deck Extraction:  2-5 seconds
+Agent Validation:       30-60 seconds
+Total Processing:       ~35-65 seconds
+API Calls:              109+ per validation
+Consensus Level:        70-90% typical
+
+
+✅ STATUS
+--------------------------------------------------------------------------------
+✓ Conda Environment:    pragatiaiengine (Python 3.11)
+✓ Dependencies:         100+ packages installed
+✓ OpenAI Integration:   Configured
+✓ Multi-Agent System:   109 agents ready
+✓ Interactive Prompts:  DISABLED (deployment ready)
+✓ Pitch Deck Support:   PDF, PPT, PPTX enabled
+✓ Documentation:        Complete
+
+
+🚀 DEPLOYMENT READY!
+--------------------------------------------------------------------------------
+All deployment blockers fixed:
+  ✓ No interactive prompts
+  ✓ Pitch deck upload support
+  ✓ Full documentation
+  ✓ Production configured
+
+Ready to deploy to production!
+
+
+================================================================================
+Version: 3.0.0 Production Ready | Last Updated: October 15, 2025
+================================================================================
+
