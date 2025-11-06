@@ -265,52 +265,52 @@ class ReportPDFGenerator:
             if score <= 5.0 and score > 0:
                 score = score * 20
             score_color = self._get_score_color(score)
-        
-        score_data = [[
-            Paragraph(
-                f"<b>Overall Score</b><br/><font size='36' color='#{score_color.hexval()}'>{score:.1f}/100</font>",
-                ParagraphStyle(
-                    'ScoreDisplay',
-                    alignment=TA_CENTER,
-                    fontSize=12,
-                    spaceAfter=10
+            
+            score_data = [[
+                Paragraph(
+                    f"<b>Overall Score</b><br/><font size='36' color='#{score_color.hexval()}'>{score:.1f}/100</font>",
+                    ParagraphStyle(
+                        'ScoreDisplay',
+                        alignment=TA_CENTER,
+                        fontSize=12,
+                        spaceAfter=10
+                    )
                 )
-            )
-        ]]
-        
-        score_table = Table(score_data, colWidths=[4 * inch])
-        score_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BACKGROUND', (0, 0), (-1, -1), self.BACKGROUND_LIGHT),
-            ('BOX', (0, 0), (-1, -1), 2, score_color),
-            ('TOPPADDING', (0, 0), (-1, -1), 20),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 20),
-        ]))
-        
-        elements.append(score_table)
-        elements.append(Spacer(1, 0.5 * inch))
-        
-        # Metadata table
-        metadata = [
-            ['Report ID:', report_data.get('_id', 'N/A')],
-            ['User ID:', report_data.get('user_id', 'N/A')],
-            ['Generated:', report_data.get('created_at', datetime.now().isoformat())],
-        ]
-        
-        metadata_table = Table(metadata, colWidths=[1.5 * inch, 3 * inch])
-        metadata_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
-            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
-            ('TEXTCOLOR', (0, 0), (0, -1), self.TEXT_SECONDARY),
-            ('TEXTCOLOR', (1, 0), (1, -1), self.TEXT_PRIMARY),
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ]))
-        
+            ]]
+            
+            score_table = Table(score_data, colWidths=[4 * inch])
+            score_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('BACKGROUND', (0, 0), (-1, -1), self.BACKGROUND_LIGHT),
+                ('BOX', (0, 0), (-1, -1), 2, score_color),
+                ('TOPPADDING', (0, 0), (-1, -1), 20),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 20),
+            ]))
+            
+            elements.append(score_table)
+            elements.append(Spacer(1, 0.5 * inch))
+            
+            # Metadata table
+            metadata = [
+                ['Report ID:', report_data.get('_id', 'N/A')],
+                ['User ID:', report_data.get('user_id', 'N/A')],
+                ['Generated:', report_data.get('created_at', datetime.now().isoformat())],
+            ]
+            
+            metadata_table = Table(metadata, colWidths=[1.5 * inch, 3 * inch])
+            metadata_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+                ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+                ('TEXTCOLOR', (0, 0), (0, -1), self.TEXT_SECONDARY),
+                ('TEXTCOLOR', (1, 0), (1, -1), self.TEXT_PRIMARY),
+                ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+                ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('TOPPADDING', (0, 0), (-1, -1), 4),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ]))
+            
             elements.append(metadata_table)
             
             return elements
@@ -346,68 +346,68 @@ class ReportPDFGenerator:
                 elements.append(Paragraph(f"<b>Overall Score:</b> {score:.1f}/100", self.styles['CustomBody']))
                 elements.append(Paragraph(f"<b>Outcome:</b> {report_data.get('validation_outcome', 'N/A')}", self.styles['CustomBody']))
                 return elements
-        
-        # Summary points
-        summary_points = exec_summary.get('summary_points', [])
-        if summary_points:
-            elements.append(Paragraph("<b>Key Findings:</b>", self.styles['SubsectionHeader']))
-            for point in summary_points:
-                elements.append(Paragraph(f"• {point}", self.styles['CustomBody']))
-            elements.append(Spacer(1, 0.15 * inch))
-        
-        # Validation outcome
-        outcome = exec_summary.get('outcome', '')
-        if outcome:
-            elements.append(Paragraph(f"<b>Validation Outcome:</b> {outcome}", self.styles['CustomBody']))
-            elements.append(Spacer(1, 0.15 * inch))
-        
-        # Key strengths from good areas
-        performance_analysis = detailed_analysis.get('performance_analysis', {})
-        good_areas = performance_analysis.get('good_areas', [])
-        if good_areas:
-            elements.append(Paragraph("<b>Key Strengths:</b>", self.styles['SubsectionHeader']))
-            for area in good_areas[:3]:
-                elements.append(Paragraph(
-                    f"• <b>{area['cluster']}</b> ({area['score']:.1f}/100): {area['reason']}", 
-                    self.styles['CustomBody']
-                ))
-            elements.append(Spacer(1, 0.15 * inch))
-        
-        # Areas for improvement from weak parameters - SHOW MORE
-        weak_parameters = performance_analysis.get('weak_parameters', [])
-        if weak_parameters:
-            elements.append(Paragraph("<b>Critical Areas for Improvement:</b>", self.styles['SubsectionHeader']))
             
-            # Group by severity
-            critical = [p for p in weak_parameters if p['severity'] == 'Critical']
-            high = [p for p in weak_parameters if p['severity'] == 'High']
-            moderate = [p for p in weak_parameters if p['severity'] == 'Moderate']
+            # Summary points
+            summary_points = exec_summary.get('summary_points', [])
+            if summary_points:
+                elements.append(Paragraph("<b>Key Findings:</b>", self.styles['SubsectionHeader']))
+                for point in summary_points:
+                    elements.append(Paragraph(f"• {point}", self.styles['CustomBody']))
+                elements.append(Spacer(1, 0.15 * inch))
             
-            if critical:
-                elements.append(Paragraph(f"<b>🚨 Critical Issues ({len(critical)}):</b>", self.styles['CustomBody']))
-                for param in critical[:10]:  # Show up to 10 critical
-                    weaknesses = param.get('weaknesses', [])
-                    if weaknesses:
-                        elements.append(Paragraph(f"• <b>{param['parameter']}</b> ({param['score']:.1f}/100):", self.styles['CustomBody']))
-                        for weakness in weaknesses[:2]:
-                            elements.append(Paragraph(f"  └─ {weakness}", self.styles['CustomBody']))
-                    else:
+            # Validation outcome
+            outcome = exec_summary.get('outcome', '')
+            if outcome:
+                elements.append(Paragraph(f"<b>Validation Outcome:</b> {outcome}", self.styles['CustomBody']))
+                elements.append(Spacer(1, 0.15 * inch))
+            
+            # Key strengths from good areas
+            performance_analysis = detailed_analysis.get('performance_analysis', {})
+            good_areas = performance_analysis.get('good_areas', [])
+            if good_areas:
+                elements.append(Paragraph("<b>Key Strengths:</b>", self.styles['SubsectionHeader']))
+                for area in good_areas[:3]:
+                    elements.append(Paragraph(
+                        f"• <b>{area['cluster']}</b> ({area['score']:.1f}/100): {area['reason']}", 
+                        self.styles['CustomBody']
+                    ))
+                elements.append(Spacer(1, 0.15 * inch))
+            
+            # Areas for improvement from weak parameters - SHOW MORE
+            weak_parameters = performance_analysis.get('weak_parameters', [])
+            if weak_parameters:
+                elements.append(Paragraph("<b>Critical Areas for Improvement:</b>", self.styles['SubsectionHeader']))
+                
+                # Group by severity
+                critical = [p for p in weak_parameters if p['severity'] == 'Critical']
+                high = [p for p in weak_parameters if p['severity'] == 'High']
+                moderate = [p for p in weak_parameters if p['severity'] == 'Moderate']
+                
+                if critical:
+                    elements.append(Paragraph(f"<b>🚨 Critical Issues ({len(critical)}):</b>", self.styles['CustomBody']))
+                    for param in critical[:10]:  # Show up to 10 critical
+                        weaknesses = param.get('weaknesses', [])
+                        if weaknesses:
+                            elements.append(Paragraph(f"• <b>{param['parameter']}</b> ({param['score']:.1f}/100):", self.styles['CustomBody']))
+                            for weakness in weaknesses[:2]:
+                                elements.append(Paragraph(f"  └─ {weakness}", self.styles['CustomBody']))
+                        else:
+                            elements.append(Paragraph(
+                                f"• {param['parameter']} ({param['score']:.1f}/100)", 
+                                self.styles['CustomBody']
+                            ))
+                
+                if high:
+                    elements.append(Paragraph(f"<b>⚠️ High Priority ({len(high)}):</b>", self.styles['CustomBody']))
+                    for param in high[:8]:  # Show up to 8 high priority
                         elements.append(Paragraph(
                             f"• {param['parameter']} ({param['score']:.1f}/100)", 
                             self.styles['CustomBody']
                         ))
-            
-            if high:
-                elements.append(Paragraph(f"<b>⚠️ High Priority ({len(high)}):</b>", self.styles['CustomBody']))
-                for param in high[:8]:  # Show up to 8 high priority
-                    elements.append(Paragraph(
-                        f"• {param['parameter']} ({param['score']:.1f}/100)", 
-                        self.styles['CustomBody']
-                    ))
-            
-            if moderate:
-                elements.append(Paragraph(f"<b>⚡ Moderate Priority ({len(moderate)} items)</b>", self.styles['CustomBody']))
-            
+                
+                if moderate:
+                    elements.append(Paragraph(f"<b>⚡ Moderate Priority ({len(moderate)} items)</b>", self.styles['CustomBody']))
+                
                 elements.append(Spacer(1, 0.15 * inch))
             
             return elements
@@ -434,24 +434,24 @@ class ReportPDFGenerator:
                 logger.warning("No cluster_analyses found in detailed_analysis")
                 elements.append(Paragraph("Detailed analysis data is being processed. Please generate a new report.", self.styles['CustomBody']))
                 return elements
-        
-        # Ensure all 7 clusters are covered
-        all_clusters = [
-            "Core Idea", "Market Opportunity", "Execution", 
-            "Business Model", "Team", "Compliance", "Risk & Strategy"
-        ]
-        
-        # Create detailed analysis for each cluster
-        for cluster_name in all_clusters:
-            cluster_data = cluster_analyses.get(cluster_name, {})
-            if cluster_data:
-                try:
-                    cluster_elements = self._create_cluster_analysis_section(cluster_name, cluster_data)
-                    elements.extend(cluster_elements)
-                    elements.append(Spacer(1, 0.2 * inch))
-                except Exception as cluster_error:
-                    logger.error(f"Error creating cluster section for {cluster_name}: {cluster_error}")
-                    elements.append(Paragraph(f"<b>{cluster_name}:</b> Data unavailable", self.styles['CustomBody']))
+            
+            # Ensure all 7 clusters are covered
+            all_clusters = [
+                "Core Idea", "Market Opportunity", "Execution", 
+                "Business Model", "Team", "Compliance", "Risk & Strategy"
+            ]
+            
+            # Create detailed analysis for each cluster
+            for cluster_name in all_clusters:
+                cluster_data = cluster_analyses.get(cluster_name, {})
+                if cluster_data:
+                    try:
+                        cluster_elements = self._create_cluster_analysis_section(cluster_name, cluster_data)
+                        elements.extend(cluster_elements)
+                        elements.append(Spacer(1, 0.2 * inch))
+                    except Exception as cluster_error:
+                        logger.error(f"Error creating cluster section for {cluster_name}: {cluster_error}")
+                        elements.append(Paragraph(f"<b>{cluster_name}:</b> Data unavailable", self.styles['CustomBody']))
             
             return elements
         except Exception as e:
