@@ -4,8 +4,10 @@ Returns structured JSON data - UI will handle presentation
 """
 
 import logging
-from flask import jsonify, request
+from flask import jsonify, request, send_file
 from database_manager import get_database_manager
+from report_pdf_generator import generate_report_pdf
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -92,5 +94,48 @@ def register_report_endpoints(app):
             logger.error(f"Failed to get report: {e}")
             return jsonify({
                 "error": "Failed to retrieve report",
+                "details": str(e)
+            }), 500
+    
+    @app.route('/api/report/<report_id>/download', methods=['GET'])
+    def download_report_pdf(report_id):
+        """
+        Download report as PDF
+        Generates a detailed, professional PDF document
+        """
+        try:
+            db_manager = get_database_manager()
+            if not db_manager:
+                return jsonify({
+                    "error": "Database not available"
+                }), 503
+            
+            report = db_manager.get_report_by_id(report_id)
+            
+            if not report:
+                return jsonify({
+                    "error": "Report not found"
+                }), 404
+            
+            # Generate PDF
+            pdf_buffer = generate_report_pdf(report)
+            
+            # Create filename
+            title = report.get('title', 'report').replace(' ', '_')
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"validation_report_{title}_{timestamp}.pdf"
+            
+            # Send PDF file
+            return send_file(
+                pdf_buffer,
+                mimetype='application/pdf',
+                as_attachment=True,
+                download_name=filename
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to generate PDF: {e}")
+            return jsonify({
+                "error": "Failed to generate PDF",
                 "details": str(e)
             }), 500

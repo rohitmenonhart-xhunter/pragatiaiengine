@@ -19,6 +19,8 @@ from pdf_generator import ValidationReportGenerator
 from pitch_deck_processor import PitchDeckProcessor
 from database_manager import get_database_manager
 from report_endpoints import register_report_endpoints
+from psychometric_endpoints import register_psychometric_endpoints
+from user_profile_manager import get_user_profile_manager
 
 # Load environment variables
 load_dotenv()
@@ -45,6 +47,10 @@ except Exception as e:
 
 # Register report management endpoints
 register_report_endpoints(app)
+
+# Register psychometric assessment endpoints
+register_psychometric_endpoints(app)
+logger.info("✅ Psychometric endpoints registered")
 
 # Global queue for real-time agent messages
 agent_message_queue = queue.Queue()
@@ -122,6 +128,19 @@ def validate_idea_endpoint():
                 "error": f"Validation failed: {str(e)}"
             }), 500
         
+        # Get user profile for personalized insights (if available)
+        profile_manager = get_user_profile_manager()
+        user_context = profile_manager.get_personalized_validation_context(user_id)
+        
+        if user_context.get('has_profile'):
+            logger.info(f"📊 Using personalized validation context for user: {user_id}")
+            result['personalized_insights'] = {
+                "user_fit_score": user_context.get('fit_score'),
+                "entrepreneurial_fit": user_context.get('entrepreneurial_fit'),
+                "strengths_to_leverage": user_context.get('strengths', [])[:3],
+                "areas_to_focus": user_context.get('weak_areas', [])[:3]
+            }
+        
         # Save to MongoDB
         report_id = None
         if db_manager:
@@ -136,6 +155,15 @@ def validate_idea_endpoint():
                 )
                 logger.info(f"✅ Saved report to MongoDB: {report_id}")
                 broadcast_agent_message("System", f"💾 Report saved to database: {report_id}", "success")
+                
+                # Add to user's validation history
+                if user_context.get('has_profile'):
+                    profile_manager.add_validation_to_history(
+                        user_id=user_id,
+                        idea_name=idea_name,
+                        validation_result=result,
+                        report_id=report_id
+                    )
             except Exception as e:
                 logger.error(f"❌ Failed to save to MongoDB: {e}")
                 # Continue without failing the validation
@@ -410,7 +438,14 @@ def api_info():
             "GET /api/test-validation": "Test the validation system",
             "GET /api/reports/<user_id>": "Get all reports for a user (JSON)",
             "GET /api/report/<report_id>": "Get specific report by ID (JSON)",
+            "GET /api/report/<report_id>/download": "Download report as PDF",
             "GET /report/<report_id>": "Get report data for UI display (JSON)",
+            "POST /api/psychometric/generate": "Generate psychometric assessment (20 questions)",
+            "POST /api/psychometric/evaluate": "Evaluate psychometric responses and get summary",
+            "GET /api/psychometric/evaluations/<user_id>": "Get all psychometric evaluations for user",
+            "GET /api/psychometric/evaluation/<evaluation_id>": "Get specific psychometric evaluation",
+            "GET /api/profile/<user_id>": "Get user profile (from psychometric assessment)",
+            "GET /api/profile/<user_id>/validation-context": "Get personalized validation context",
             "GET /": "Main validation interface (web UI)",
             "GET /reports.html": "Reports viewer page (web UI)",
             "GET /health": "Health check endpoint"
@@ -420,7 +455,10 @@ def api_info():
             "Inter-agent collaboration and dependency resolution",
             "Comprehensive Indian market analysis",
             "Real-time consensus building",
-            "Detailed HTML reporting",
+            "Detailed PDF reporting with download",
+            "Psychometric assessment for entrepreneurs",
+            "User profiles with personalized validation insights",
+            "Profile-aware recommendations",
             "Beautiful modern web interface"
         ]
     })
