@@ -75,16 +75,16 @@ class DatabaseManager:
                 "idea_concept": idea_concept,
                 "source_type": source_type,  # "manual" or "pitch_deck"
                 "created_at": datetime.now(timezone.utc),
-                "overall_score": validation_result.get("overall_score", 0),
+                "overall_score": validation_result.get("overall_score", 0),  # Already in 100 scale from agents
                 "validation_outcome": validation_result.get("validation_outcome", "UNKNOWN"),
                 "processing_time": validation_result.get("processing_time", 0),
                 "agents_consulted": validation_result.get("api_calls_made", 0),
-                "consensus_level": validation_result.get("consensus_level", 0),
+                "consensus_level": validation_result.get("consensus_level", 0) * 100,  # Convert to percentage
                 
                 # Detailed analysis data
                 "detailed_analysis": detailed_report,
                 
-                # Raw validation data (for reference)
+                # Raw validation data (for reference - keep original 5.0 scale)
                 "raw_validation_result": validation_result,
                 
                 # Metadata
@@ -113,14 +113,21 @@ class DatabaseManager:
         cluster_scores = validation_result.get("cluster_scores", {})
         evaluated_data = validation_result.get("evaluated_data", {})
         
+        # Scores are now ALREADY in 100-scale from agents
+        overall_score = validation_result.get("overall_score", 0)
+        normalized_cluster_scores = cluster_scores  # Already normalized by agents
+        
         # Analyze agent arguments and consensus
         agent_arguments = self._analyze_agent_arguments(evaluated_data)
         
-        # Identify good and bad areas
-        good_areas, bad_areas = self._identify_performance_areas(cluster_scores, evaluated_data)
+        # Identify good and bad areas with ALL parameters
+        good_areas, bad_areas, all_weak_parameters = self._identify_performance_areas(normalized_cluster_scores, evaluated_data)
+        
+        # Generate ALL cluster analyses (ensure all 7 clusters are covered)
+        cluster_analyses = self._generate_all_cluster_analyses(normalized_cluster_scores, evaluated_data)
         
         # Generate recommendations and next steps
-        recommendations = self._generate_detailed_recommendations(validation_result, bad_areas)
+        recommendations = self._generate_detailed_recommendations(validation_result, bad_areas, all_weak_parameters)
         
         # Pitch deck improvements (if applicable)
         pitch_deck_improvements = self._generate_pitch_deck_improvements(bad_areas, evaluated_data)
@@ -128,32 +135,43 @@ class DatabaseManager:
         detailed_report = {
             "title": f"Validation Report: {idea_name}",
             "executive_summary": {
-                "overall_score": validation_result.get("overall_score", 0),
+                "overall_score": overall_score,  # Now out of 100
                 "outcome": validation_result.get("validation_outcome", "UNKNOWN"),
                 "agents_consulted": validation_result.get("api_calls_made", 0),
-                "consensus_level": validation_result.get("consensus_level", 0),
-                "processing_time": validation_result.get("processing_time", 0)
+                "consensus_level": validation_result.get("consensus_level", 0) * 100,  # Percentage
+                "processing_time": validation_result.get("processing_time", 0),
+                "summary_points": [
+                    f"Overall viability score: {overall_score:.1f}/100",
+                    f"Agents consulted: {validation_result.get('api_calls_made', 0)}",
+                    f"Validation outcome: {validation_result.get('validation_outcome', 'UNKNOWN')}",
+                    f"Top strength: {good_areas[0]['cluster'] if good_areas else 'N/A'}",
+                    f"Main concern: {bad_areas[0]['cluster'] if bad_areas else 'N/A'}"
+                ]
             },
             
             "parameters_validated": {
                 "total_parameters": len(self._flatten_evaluated_data(evaluated_data)),
-                "clusters": list(cluster_scores.keys()),
+                "clusters": list(normalized_cluster_scores.keys()),
                 "cluster_breakdown": {
                     cluster: {
-                        "score": score,
+                        "score": score,  # Now out of 100
                         "parameters": len(evaluated_data.get(cluster, {})),
-                        "status": "Excellent" if score >= 4.0 else "Good" if score >= 3.0 else "Needs Improvement"
+                        "status": "Excellent" if score >= 80 else "Good" if score >= 60 else "Needs Improvement"
                     }
-                    for cluster, score in cluster_scores.items()
+                    for cluster, score in normalized_cluster_scores.items()
                 }
             },
+            
+            # Complete cluster analyses with all parameters
+            "cluster_analyses": cluster_analyses,
             
             "agent_arguments": agent_arguments,
             
             "performance_analysis": {
                 "good_areas": good_areas,
                 "bad_areas": bad_areas,
-                "neutral_areas": self._identify_neutral_areas(cluster_scores)
+                "neutral_areas": self._identify_neutral_areas(normalized_cluster_scores),
+                "weak_parameters": all_weak_parameters  # All low-scoring parameters
             },
             
             "detailed_recommendations": recommendations,
@@ -166,7 +184,7 @@ class DatabaseManager:
             
             "risk_assessment": {
                 "critical_risks": validation_result.get("critical_risks", []),
-                "risk_level": self._assess_overall_risk_level(validation_result.get("overall_score", 0))
+                "risk_level": self._assess_overall_risk_level(overall_score)  # Use normalized score
             }
         }
         
@@ -224,15 +242,16 @@ class DatabaseManager:
     
     def _identify_performance_areas(self, cluster_scores: Dict[str, float], 
                                   evaluated_data: Dict[str, Any]) -> tuple:
-        """Identify good and bad performance areas"""
+        """Identify good and bad performance areas (scores are on 100 scale)"""
         good_areas = []
         bad_areas = []
+        all_weak_parameters = []
         
         for cluster, score in cluster_scores.items():
             cluster_data = evaluated_data.get(cluster, {})
             
-            if score >= 4.0:
-                # Good area
+            if score >= 80:
+                # Good area (80-100)
                 good_areas.append({
                     "cluster": cluster,
                     "score": score,
@@ -240,8 +259,8 @@ class DatabaseManager:
                     "key_strengths": self._extract_cluster_strengths(cluster_data),
                     "impact": "High positive impact on overall viability"
                 })
-            elif score <= 2.5:
-                # Bad area
+            elif score <= 50:
+                # Bad area (0-50)
                 bad_areas.append({
                     "cluster": cluster,
                     "score": score,
@@ -250,39 +269,180 @@ class DatabaseManager:
                     "impact": "Major concern requiring immediate attention",
                     "improvement_priority": "High"
                 })
+            
+            # Extract ALL weak parameters from this cluster
+            weak_params = self._extract_all_weak_parameters(cluster, cluster_data)
+            all_weak_parameters.extend(weak_params)
         
-        return good_areas, bad_areas
+        # Sort weak parameters by score (lowest first)
+        all_weak_parameters.sort(key=lambda x: x['score'])
+        
+        return good_areas, bad_areas, all_weak_parameters
     
     def _extract_cluster_strengths(self, cluster_data: Dict[str, Any]) -> List[str]:
-        """Extract key strengths from cluster data"""
+        """Extract ALL strengths from cluster data (from agent output)"""
         strengths = []
         flattened = self._flatten_cluster_data(cluster_data)
         
-        # Find high-scoring parameters
+        # Extract explicit strengths from agents PLUS high scores
         for param_path, data in flattened.items():
-            if data.get("assignedScore", 0) >= 4.0:
-                strengths.append(f"{param_path}: {data.get('explanation', '')[:100]}...")
+            # Get explicit strengths from agent
+            agent_strengths = data.get('strengths', [])
+            if agent_strengths:
+                for strength in agent_strengths:
+                    strengths.append(f"{param_path}: {strength}")
+            # Also add high-scoring items
+            elif data.get("assignedScore", 0) >= 80:  # 80+ on 100 scale
+                strengths.append(f"{param_path} ({data.get('assignedScore', 0):.1f}/100): {data.get('explanation', '')[:100]}")
         
-        return strengths[:3]  # Top 3 strengths
+        return strengths  # Return ALL strengths, not just top 3
     
     def _extract_cluster_weaknesses(self, cluster_data: Dict[str, Any]) -> List[str]:
-        """Extract key weaknesses from cluster data"""
+        """Extract ALL weaknesses from cluster data (from agent output)"""
         weaknesses = []
         flattened = self._flatten_cluster_data(cluster_data)
         
-        # Find low-scoring parameters
+        # Extract explicit weaknesses from agents PLUS low scores
         for param_path, data in flattened.items():
-            if data.get("assignedScore", 0) <= 2.5:
-                weaknesses.append(f"{param_path}: {data.get('explanation', '')[:100]}...")
+            # Get explicit weaknesses from agent
+            agent_weaknesses = data.get('weaknesses', [])
+            if agent_weaknesses:
+                for weakness in agent_weaknesses:
+                    weaknesses.append(f"{param_path}: {weakness}")
+            # Also add low-scoring items
+            elif data.get("assignedScore", 0) < 60:  # Below 60 on 100 scale
+                weaknesses.append(f"{param_path} ({data.get('assignedScore', 0):.1f}/100): {data.get('explanation', '')[:150]}")
         
-        return weaknesses[:3]  # Top 3 weaknesses
+        return weaknesses  # Return ALL weaknesses
+    
+    def _extract_all_weak_parameters(self, cluster_name: str, cluster_data: Dict[str, Any]) -> List[Dict]:
+        """Extract ALL weak parameters from a cluster with detailed info (including agent weaknesses)"""
+        weak_params = []
+        flattened = self._flatten_cluster_data(cluster_data)
+        
+        # Find ALL low-scoring parameters OR those with explicit weaknesses
+        for param_path, data in flattened.items():
+            score = data.get("assignedScore", 0)  # Already in 100 scale from agents
+            agent_weaknesses = data.get('weaknesses', [])
+            
+            # Include if score is low OR agent identified weaknesses
+            if score < 60 or agent_weaknesses:
+                # Combine explanation with agent weaknesses
+                explanation_parts = [data.get('explanation', '')]
+                if agent_weaknesses:
+                    explanation_parts.extend([f"• {w}" for w in agent_weaknesses])
+                full_explanation = " | ".join(explanation_parts)[:300]
+                
+                weak_params.append({
+                    "cluster": cluster_name,
+                    "parameter": param_path,
+                    "score": score,
+                    "explanation": full_explanation,
+                    "weaknesses": agent_weaknesses,  # Include explicit weaknesses
+                    "severity": "Critical" if score < 40 else "High" if score < 50 else "Moderate"
+                })
+        
+        return weak_params
+    
+    def _generate_all_cluster_analyses(self, cluster_scores: Dict[str, float], 
+                                     evaluated_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate comprehensive analysis for ALL 7 clusters with all parameters"""
+        analyses = {}
+        
+        # Ensure all expected clusters are covered
+        all_clusters = [
+            "Core Idea", "Market Opportunity", "Execution", 
+            "Business Model", "Team", "Compliance", "Risk & Strategy"
+        ]
+        
+        for cluster in all_clusters:
+            score = cluster_scores.get(cluster, 0)
+            cluster_data = evaluated_data.get(cluster, {})
+            
+            # Extract all parameters with their scores
+            parameters = self._extract_all_parameters_with_scores(cluster_data)
+            
+            # Categorize parameters
+            strong_params = [p for p in parameters if p['score'] >= 80]
+            moderate_params = [p for p in parameters if 60 <= p['score'] < 80]
+            weak_params = [p for p in parameters if p['score'] < 60]
+            
+            analyses[cluster] = {
+                "score": score,
+                "status": "Excellent" if score >= 80 else "Good" if score >= 60 else "Needs Improvement",
+                "total_parameters": len(parameters),
+                "parameters": {
+                    "strong": strong_params,
+                    "moderate": moderate_params,
+                    "weak": weak_params
+                },
+                "summary_points": self._generate_cluster_summary_points(cluster, score, parameters)
+            }
+        
+        return analyses
+    
+    def _extract_all_parameters_with_scores(self, cluster_data: Dict[str, Any]) -> List[Dict]:
+        """Extract all parameters with COMPLETE agent data (100-scale)"""
+        parameters = []
+        flattened = self._flatten_cluster_data(cluster_data)
+        
+        for param_path, data in flattened.items():
+            score = data.get("assignedScore", 0)  # Already in 100 scale from agents
+            
+            parameters.append({
+                "name": param_path,
+                "score": score,
+                "explanation": data.get('explanation', 'No explanation provided'),
+                "assumptions": data.get('assumptions', []),
+                # Include ALL agent insights
+                "key_insights": data.get('key_insights', []),
+                "strengths": data.get('strengths', []),
+                "weaknesses": data.get('weaknesses', []),
+                "recommendations": data.get('recommendations', []),
+                "risk_factors": data.get('risk_factors', []),
+                "indian_market_considerations": data.get('indian_market_considerations', '')
+            })
+        
+        # Sort by score (highest first)
+        parameters.sort(key=lambda x: x['score'], reverse=True)
+        
+        return parameters
+    
+    def _generate_cluster_summary_points(self, cluster_name: str, score: float, 
+                                       parameters: List[Dict]) -> List[str]:
+        """Generate concise bullet point summary for a cluster"""
+        points = []
+        
+        # Overall assessment
+        if score >= 80:
+            points.append(f"{cluster_name} shows excellent performance ({score:.1f}/100)")
+        elif score >= 60:
+            points.append(f"{cluster_name} demonstrates good performance ({score:.1f}/100) with room for optimization")
+        else:
+            points.append(f"{cluster_name} requires significant improvement ({score:.1f}/100)")
+        
+        # Top strength
+        if parameters:
+            top_param = parameters[0]
+            points.append(f"Strongest area: {top_param['name']} ({top_param['score']:.1f}/100)")
+        
+        # Top weakness
+        weak_params = [p for p in parameters if p['score'] < 60]
+        if weak_params:
+            weakest = weak_params[-1]
+            points.append(f"Weakest area: {weakest['name']} ({weakest['score']:.1f}/100)")
+        
+        # Parameters count
+        points.append(f"Total parameters evaluated: {len(parameters)}")
+        
+        return points
     
     def _identify_neutral_areas(self, cluster_scores: Dict[str, float]) -> List[Dict[str, Any]]:
-        """Identify neutral performance areas"""
+        """Identify neutral performance areas (50-80 range on 100 scale)"""
         neutral_areas = []
         
         for cluster, score in cluster_scores.items():
-            if 2.5 < score < 4.0:
+            if 50 < score < 80:
                 neutral_areas.append({
                     "cluster": cluster,
                     "score": score,
@@ -292,30 +452,63 @@ class DatabaseManager:
         return neutral_areas
     
     def _generate_detailed_recommendations(self, validation_result: Dict[str, Any], 
-                                         bad_areas: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Generate detailed recommendations"""
+                                         bad_areas: List[Dict[str, Any]], 
+                                         weak_parameters: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Generate detailed recommendations with bullet points"""
         recommendations = []
         
-        # Get existing recommendations
+        # Get existing recommendations from validation
         existing_recs = validation_result.get("key_recommendations", [])
         
-        # Add detailed recommendations for bad areas
+        # Add recommendations for bad clusters
         for area in bad_areas:
             recommendations.append({
                 "category": area["cluster"],
-                "priority": "High",
-                "recommendation": f"Focus on improving {area['cluster']} (Score: {area['score']:.2f})",
-                "specific_actions": area.get("key_weaknesses", []),
-                "expected_impact": "Significant improvement in overall viability"
+                "priority": "Critical",
+                "score": area["score"],
+                "recommendation": f"Immediate attention required for {area['cluster']}",
+                "action_items": [
+                    f"Current score: {area['score']:.1f}/100 - requires 20+ point improvement",
+                    f"Impact: {area.get('impact', 'High')}",
+                    *area.get("key_weaknesses", [])
+                ]
             })
         
+        # Add recommendations for specific weak parameters
+        if weak_parameters:
+            # Group by severity
+            critical_params = [p for p in weak_parameters if p['severity'] == 'Critical']
+            high_params = [p for p in weak_parameters if p['severity'] == 'High']
+            
+            if critical_params:
+                recommendations.append({
+                    "category": "Critical Parameters",
+                    "priority": "Urgent",
+                    "recommendation": f"Address {len(critical_params)} critical parameters (score < 40/100)",
+                    "action_items": [
+                        f"{p['parameter']}: {p['score']:.1f}/100 - {p['explanation'][:100]}..."
+                        for p in critical_params[:5]
+                    ]
+                })
+            
+            if high_params:
+                recommendations.append({
+                    "category": "High Priority Parameters",
+                    "priority": "High",
+                    "recommendation": f"Improve {len(high_params)} parameters (score 40-50/100)",
+                    "action_items": [
+                        f"{p['parameter']}: {p['score']:.1f}/100 - {p['explanation'][:100]}..."
+                        for p in high_params[:5]
+                    ]
+                })
+        
         # Add general recommendations
-        for i, rec in enumerate(existing_recs[:5]):
+        for i, rec in enumerate(existing_recs[:3]):
             recommendations.append({
-                "category": "General",
-                "priority": "Medium" if i > 2 else "High",
+                "category": "General Improvement",
+                "priority": "Medium",
                 "recommendation": rec,
-                "specific_actions": ["Implement recommended changes", "Monitor progress"],
+                "action_items": ["Implement recommended changes", "Monitor progress regularly"],
                 "expected_impact": "Positive impact on startup success"
             })
         
@@ -420,12 +613,12 @@ class DatabaseManager:
         return improvements
     
     def _assess_overall_risk_level(self, overall_score: float) -> str:
-        """Assess overall risk level based on score"""
-        if overall_score >= 4.0:
+        """Assess overall risk level based on score (100 scale)"""
+        if overall_score >= 80:
             return "Low Risk"
-        elif overall_score >= 3.0:
+        elif overall_score >= 60:
             return "Moderate Risk"
-        elif overall_score >= 2.0:
+        elif overall_score >= 40:
             return "High Risk"
         else:
             return "Very High Risk"

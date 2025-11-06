@@ -20,22 +20,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class ValidationOutcome(Enum):
-    """Validation outcome categories"""
-    EXCELLENT = "EXCELLENT"      # 4.5-5.0
-    GOOD = "GOOD"               # 3.5-4.4
-    MODERATE = "MODERATE"       # 2.5-3.4
-    WEAK = "WEAK"              # 1.5-2.4
-    POOR = "POOR"              # 1.0-1.4
+    """Validation outcome categories (100-point scale)"""
+    EXCELLENT = "EXCELLENT"      # 90-100
+    GOOD = "GOOD"               # 70-89
+    MODERATE = "MODERATE"       # 50-69
+    WEAK = "WEAK"              # 30-49
+    POOR = "POOR"              # 0-29
 
 @dataclass
 class AgentEvaluation:
-    """Individual agent evaluation result"""
+    """Individual agent evaluation result (100-point scale)"""
     agent_id: str
     parameter_name: str
     cluster: str
     sub_cluster: str
-    sub_parameter: str  # Add sub_parameter field
-    assigned_score: float  # 1.0-5.0
+    sub_parameter: str
+    assigned_score: float  # 0-100 scale
     confidence_level: float  # 0.0-1.0
     explanation: str
     assumptions: List[str]
@@ -43,8 +43,10 @@ class AgentEvaluation:
     weight_contribution: float
     processing_time: float
     timestamp: str
-    # Enhanced fields from agent output
+    # Enhanced fields from agent output (bullet points)
     key_insights: List[str] = None
+    strengths: List[str] = None  # NEW: Explicit strengths
+    weaknesses: List[str] = None  # NEW: Explicit weaknesses
     recommendations: List[str] = None
     risk_factors: List[str] = None
     peer_challenges: List[str] = None
@@ -732,7 +734,7 @@ class CrewAIValidationOrchestrator:
         return results
     
     def _parse_agent_result(self, agent_id: str, result: Any, start_time: datetime) -> AgentEvaluation:
-        """Parse agent execution result into structured format"""
+        """Parse agent execution result into structured format (100-scale scoring)"""
         agent_info = self.agent_registry[agent_id]
         processing_time = (datetime.now() - start_time).total_seconds()
         
@@ -756,13 +758,21 @@ class CrewAIValidationOrchestrator:
                 # Create from string analysis
                 result_data = self._extract_data_from_text(result_text)
             
+            # Get score and normalize if needed
+            score = float(result_data.get('score', 60.0))
+            # If score is in old 5.0 format (<=5), convert to 100
+            if score <= 5.0:
+                score = score * 20
+            # Clamp to valid range
+            score = max(0.0, min(100.0, score))
+            
             return AgentEvaluation(
                 agent_id=agent_id,
                 parameter_name=agent_info['sub_parameter'],
                 cluster=agent_info['cluster'],
                 sub_cluster=agent_info['parameter'],
-                sub_parameter=agent_info['sub_parameter'],  # Add sub_parameter
-                assigned_score=float(result_data.get('score', 3.0)),
+                sub_parameter=agent_info['sub_parameter'],
+                assigned_score=score,  # Now 0-100 scale
                 confidence_level=float(result_data.get('confidence_level', 0.7)),
                 explanation=result_data.get('explanation', 'Analysis completed'),
                 assumptions=result_data.get('assumptions', []),
@@ -770,8 +780,10 @@ class CrewAIValidationOrchestrator:
                 weight_contribution=agent_info['config'].get('weight', 20),
                 processing_time=processing_time,
                 timestamp=start_time.isoformat(),
-                # Enhanced fields from agent output
+                # Enhanced fields from agent output (bullet points from agents)
                 key_insights=result_data.get('key_insights', []),
+                strengths=result_data.get('strengths', []),  # NEW from agents
+                weaknesses=result_data.get('weaknesses', []),  # NEW from agents
                 recommendations=result_data.get('recommendations', []),
                 risk_factors=result_data.get('risk_factors', []),
                 peer_challenges=result_data.get('peer_challenges', []),
@@ -784,9 +796,9 @@ class CrewAIValidationOrchestrator:
             return self._create_fallback_evaluation(agent_id, start_time)
     
     def _extract_data_from_text(self, text: str) -> Dict[str, Any]:
-        """Extract evaluation data from text when JSON parsing fails"""
+        """Extract evaluation data from text when JSON parsing fails (100-scale)"""
         # Simple text analysis fallback
-        score = 3.0  # Default
+        score = 60.0  # Default middle score on 100 scale
         explanation = text[:200] if text else "Analysis completed"
         
         # Try to extract score from text
@@ -795,7 +807,10 @@ class CrewAIValidationOrchestrator:
         if score_matches:
             try:
                 score = float(score_matches[0])
-                score = max(1.0, min(5.0, score))  # Clamp to valid range
+                # If score is small (<=5), assume it's old format
+                if score <= 5.0:
+                    score = score * 20
+                score = max(0.0, min(100.0, score))  # Clamp to valid range
             except:
                 pass
         
@@ -803,11 +818,16 @@ class CrewAIValidationOrchestrator:
             'score': score,
             'explanation': explanation,
             'assumptions': ['Extracted from text analysis'],
-            'confidence_level': 0.6
+            'confidence_level': 0.6,
+            'key_insights': [],
+            'strengths': [],
+            'weaknesses': [],
+            'recommendations': [],
+            'risk_factors': []
         }
     
     def _create_fallback_evaluation(self, agent_id: str, start_time: datetime) -> AgentEvaluation:
-        """Create fallback evaluation when agent fails"""
+        """Create fallback evaluation when agent fails (100-scale)"""
         agent_info = self.agent_registry[agent_id]
         processing_time = (datetime.now() - start_time).total_seconds()
         
@@ -816,8 +836,8 @@ class CrewAIValidationOrchestrator:
             parameter_name=agent_info['sub_parameter'],
             cluster=agent_info['cluster'],
             sub_cluster=agent_info['parameter'],
-            sub_parameter=agent_info['sub_parameter'],  # Add sub_parameter
-            assigned_score=3.0,  # Neutral score
+            sub_parameter=agent_info['sub_parameter'],
+            assigned_score=60.0,  # Neutral score on 100 scale
             confidence_level=0.5,
             explanation=f"Fallback evaluation for {agent_info['sub_parameter']} due to processing error",
             assumptions=["Fallback evaluation applied"],
@@ -827,6 +847,8 @@ class CrewAIValidationOrchestrator:
             timestamp=start_time.isoformat(),
             # Enhanced fields with fallback values
             key_insights=[],
+            strengths=[],
+            weaknesses=[],
             recommendations=[],
             risk_factors=[],
             peer_challenges=[],
@@ -836,9 +858,9 @@ class CrewAIValidationOrchestrator:
     
     def _calculate_overall_score(self, evaluations: List[AgentEvaluation], 
                                custom_weights: Optional[Dict[str, float]] = None) -> float:
-        """Calculate weighted overall score from all agent evaluations"""
+        """Calculate weighted overall score from all agent evaluations (100-scale)"""
         if not evaluations:
-            return 3.0
+            return 60.0  # Neutral score on 100 scale
         
         # Calculate cluster weights
         cluster_weights = {
@@ -874,17 +896,17 @@ class CrewAIValidationOrchestrator:
                 total_weighted_score += cluster_score * weight
                 total_weight += weight
         
-        return total_weighted_score / total_weight if total_weight > 0 else 3.0
+        return total_weighted_score / total_weight if total_weight > 0 else 60.0
     
     def _determine_validation_outcome(self, overall_score: float) -> ValidationOutcome:
-        """Determine validation outcome based on overall score"""
-        if overall_score >= 4.5:
+        """Determine validation outcome based on overall score (100-scale)"""
+        if overall_score >= 90:
             return ValidationOutcome.EXCELLENT
-        elif overall_score >= 3.5:
+        elif overall_score >= 70:
             return ValidationOutcome.GOOD
-        elif overall_score >= 2.5:
+        elif overall_score >= 50:
             return ValidationOutcome.MODERATE
-        elif overall_score >= 1.5:
+        elif overall_score >= 30:
             return ValidationOutcome.WEAK
         else:
             return ValidationOutcome.POOR

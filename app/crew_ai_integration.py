@@ -136,7 +136,7 @@ class PragatiCrewAIValidator:
         }
     
     def _convert_evaluations_to_legacy_format(self, evaluations: List) -> Dict[str, Any]:
-        """Convert agent evaluations to nested dictionary format"""
+        """Convert agent evaluations to nested dictionary format with ALL details"""
         evaluated_data = {}
         
         for evaluation in evaluations:
@@ -150,7 +150,7 @@ class PragatiCrewAIValidator:
             if parameter not in evaluated_data[cluster]:
                 evaluated_data[cluster][parameter] = {}
             
-            # Add evaluation data
+            # Add COMPLETE evaluation data including all bullet points
             evaluated_data[cluster][parameter][sub_parameter] = {
                 "assignedScore": evaluation.assigned_score,
                 "explanation": evaluation.explanation,
@@ -159,7 +159,16 @@ class PragatiCrewAIValidator:
                 "confidence_level": evaluation.confidence_level,
                 "processing_time": evaluation.processing_time,
                 "agent_id": evaluation.agent_id,
-                "dependencies": evaluation.dependencies
+                "dependencies": evaluation.dependencies,
+                # NEW: Include all rich agent insights
+                "key_insights": evaluation.key_insights if hasattr(evaluation, 'key_insights') else [],
+                "recommendations": evaluation.recommendations if hasattr(evaluation, 'recommendations') else [],
+                "risk_factors": evaluation.risk_factors if hasattr(evaluation, 'risk_factors') else [],
+                "strengths": getattr(evaluation, 'strengths', []),
+                "weaknesses": getattr(evaluation, 'weaknesses', []),
+                "peer_challenges": evaluation.peer_challenges if hasattr(evaluation, 'peer_challenges') else [],
+                "evidence_gaps": evaluation.evidence_gaps if hasattr(evaluation, 'evidence_gaps') else [],
+                "indian_market_considerations": evaluation.indian_market_considerations if hasattr(evaluation, 'indian_market_considerations') else ""
             }
         
         return evaluated_data

@@ -48,11 +48,11 @@ class BaseValidationAgent(ABC):
     def get_default_goal(self) -> str:
         """Default goal for the agent"""
         return f"""Provide expert evaluation of {self.sub_parameter} for startup ideas with precise 
-        scoring (1.0-5.0), detailed analysis, and actionable insights within the {self.cluster} 
+        scoring (0-100 scale), concise bullet-point analysis, and actionable insights within the {self.cluster} 
         evaluation framework. Be CRITICAL and RIGOROUS in your assessment. Challenge assumptions, 
         identify weaknesses, and don't hesitate to give low scores for poor ideas. Question other 
         agents' evaluations when they seem too lenient. Focus on Indian market context and provide 
-        specific, measurable assessments with HONEST scoring."""
+        specific, measurable assessments with HONEST scoring. Use bullet points for clarity."""
     
     def get_default_backstory(self) -> str:
         """Default backstory for the agent"""
@@ -128,11 +128,14 @@ class BaseValidationAgent(ABC):
             "default_criteria": {
                 "description": f"Evaluate {self.sub_parameter} thoroughly",
                 "scoring_rubric": {
-                    5: "Excellent - exceeds expectations significantly",
-                    4: "Good - meets expectations with some excellence",
-                    3: "Moderate - meets basic expectations",
-                    2: "Weak - below expectations, needs improvement", 
-                    1: "Poor - significantly below expectations"
+                    "90-100": "Outstanding - exceeds expectations significantly",
+                    "80-89": "Strong - above market standards",
+                    "70-79": "Good - meets expectations well",
+                    "60-69": "Acceptable - meets basic requirements",
+                    "50-59": "Below expectations - needs improvement",
+                    "40-49": "Weak - major improvements required",
+                    "30-39": "Poor - fundamental problems",
+                    "0-29": "Critical - not viable"
                 }
             }
         }
@@ -193,13 +196,16 @@ class BaseValidationAgent(ABC):
         - Government policies and startup ecosystem support
         - Local competition and market dynamics
         
-        **SCORING GUIDELINES:**
-        - Score: 1.0-5.0 (use decimals for precision)
-        - 5.0: Outstanding, exceptional performance
-        - 4.0: Strong performance, above market standards
-        - 3.0: Acceptable performance, meets basic requirements
-        - 2.0: Below expectations, significant concerns
-        - 1.0: Major deficiencies, fundamental problems
+        **SCORING GUIDELINES (0-100 SCALE):**
+        - Score: 0-100 (whole numbers or decimals)
+        - 90-100: Outstanding, exceptional performance
+        - 80-89: Strong performance, above market standards  
+        - 70-79: Good performance, meets expectations
+        - 60-69: Acceptable performance, meets basic requirements
+        - 50-59: Below expectations, significant concerns
+        - 40-49: Weak performance, major improvements needed
+        - 30-39: Poor performance, fundamental problems
+        - 0-29: Critically inadequate, not viable
         
         **DEPENDENCY INSIGHTS & PEER REVIEW:**
         {self._format_dependency_results(dependency_results)}
@@ -215,27 +221,48 @@ class BaseValidationAgent(ABC):
         
         **PEER CHALLENGE PROTOCOL:**
         MANDATORY: You MUST analyze and challenge other agents' assessments when available. For each dependency insight:
-        1. If another agent gave a score >3.5, argue why it should be LOWER (be skeptical)
-        2. If another agent gave a score <2.5, consider if it should be HIGHER (be balanced)
+        1. If another agent gave a score >70, argue why it should be LOWER (be skeptical)
+        2. If another agent gave a score <50, consider if it should be HIGHER (be balanced)
         3. Point out specific weaknesses in their reasoning
         4. Highlight evidence they missed or misinterpreted
         5. Question their assumptions and methodology
         6. DO NOT simply agree - your job is to provide a different perspective
         
-        **REQUIRED OUTPUT FORMAT:**
+        **REQUIRED OUTPUT FORMAT (BULLET POINTS ONLY):**
         Provide a JSON response with exactly this structure:
         {{
-            "score": <float between 1.0 and 5.0>,
+            "score": <integer or float between 0 and 100>,
             "confidence_level": <float between 0.0 and 1.0>,
-            "explanation": "<detailed 3-4 sentence explanation of your assessment>",
-            "assumptions": ["<assumption 1>", "<assumption 2>", "<assumption 3>"],
-            "key_insights": ["<insight 1>", "<insight 2>"],
-            "recommendations": ["<recommendation 1>", "<recommendation 2>"],
-            "risk_factors": ["<risk 1>", "<risk 2>"],
-            "peer_challenges": ["<challenge to other agent 1>", "<challenge to other agent 2>"],
-            "evidence_gaps": ["<missing evidence 1>", "<missing evidence 2>"],
-            "indian_market_considerations": "<specific factors for Indian market>"
+            "explanation": "<ONE concise sentence summarizing your assessment>",
+            "key_insights": [
+                "Bullet point insight 1 (one line max)",
+                "Bullet point insight 2 (one line max)",
+                "Bullet point insight 3 (one line max)"
+            ],
+            "strengths": [
+                "Strength 1 (one line)",
+                "Strength 2 (one line)"
+            ],
+            "weaknesses": [
+                "Weakness 1 (one line) - BE SPECIFIC",
+                "Weakness 2 (one line) - BE SPECIFIC",
+                "Weakness 3 (one line) - BE SPECIFIC"
+            ],
+            "recommendations": [
+                "Action item 1 (one line)",
+                "Action item 2 (one line)"
+            ],
+            "risk_factors": [
+                "Risk 1 (one line)",
+                "Risk 2 (one line)"
+            ],
+            "assumptions": ["Assumption 1", "Assumption 2"],
+            "peer_challenges": ["Challenge 1", "Challenge 2"],
+            "evidence_gaps": ["Gap 1", "Gap 2"],
+            "indian_market_considerations": "<ONE sentence about Indian market>"
         }}
+        
+        CRITICAL: Each array item must be ONE LINE ONLY. No paragraphs. Be specific and concise.
         
         Ensure your evaluation is thorough, objective, and actionable.
         """
