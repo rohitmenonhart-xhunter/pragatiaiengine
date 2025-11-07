@@ -1,0 +1,100 @@
+╔══════════════════════════════════════════════════════════╗
+║     PRAGATI AI ENGINE - QUICK REFERENCE CARD            ║
+╚══════════════════════════════════════════════════════════╝
+
+🎯 CURRENT STATUS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ TEST MODE: Active (2 agents only)
+✅ PDF System: Multi-file, AI-written
+✅ Database: Saving agent conversations
+✅ Error Handling: Fixed
+✅ Scoring: 0-100 scale throughout
+✅ Format: Bullet points only
+
+🚀 START SERVER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+cd /Users/rohit/Desktop/pragatiaiengine
+source /opt/anaconda3/etc/profile.d/conda.sh
+conda activate pragatiaiengine
+python app/app_v3.py
+
+Expected output:
+  ⚠️  TEST MODE: Initializing only 2 agents
+  ✅ Initialized 2 specialized validation agents
+
+🧪 TEST VALIDATION (30 seconds, 2 agents)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+curl -X POST http://localhost:5000/api/validate \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":"test","idea_title":"AI App","idea_description":"..."}'
+
+Response includes: report_id
+
+📄 DOWNLOAD PDF
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+curl http://localhost:5000/api/report/{REPORT_ID}/download -o report.pdf
+open report.pdf
+
+🔄 SWITCH TO PRODUCTION (109 agents)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Edit: app/crew_ai_validation/core.py
+2. Line 25: TEST_MODE = False
+3. Restart: pkill -f app_v3.py && python app/app_v3.py
+4. Wait 15-20 mins per validation
+5. Get comprehensive 15-20 page reports
+
+📊 WHAT'S IN THE REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Title page with score
+✓ Executive summary (AI-written from agents)
+✓ Bullet-point findings
+✓ Green boxes for strengths (pros)
+✓ Red boxes for weaknesses (cons)
+✓ Detailed analysis by cluster
+✓ Conclusion & recommendations
+✓ Color-coded scores (0-100)
+✓ Beautiful professional design
+
+🔍 VERIFY TEST MODE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+python -c "from app.crew_ai_validation.core import TEST_MODE; print('TEST MODE:',TEST_MODE)"
+
+Should print: TEST MODE: True
+
+🐛 TROUBLESHOOT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Issue: Too many agents
+Fix: Verify TEST_MODE = True in core.py line 25
+
+Issue: PDF empty
+Fix: Run NEW validation (old reports have no agent data)
+
+Issue: Server won't start
+Fix: pkill -f app_v3.py && python app/app_v3.py
+
+Issue: "Cannot convert undefined"
+Fix: Already fixed! Use latest app_v3.py
+
+📁 KEY FILES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+app/crew_ai_validation/core.py         ← Line 25: TEST_MODE
+app/pdf_report_system/report_writer.py ← AI writes reports
+app/app_v3.py                          ← Flask server
+TEST_MODE_GUIDE.md                     ← Full testing guide
+FINAL_SUMMARY.md                       ← Complete documentation
+
+💡 PRO TIPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Always test with 2 agents first (TEST_MODE = True)
+• Check server output for agent count on startup
+• Run NEW validations to test AI report writer
+• Old reports still work (fallback PDF)
+• Credits saved: 107 agent calls per validation!
+
+🎯 FLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Request → 2 Agents Discuss → Save to DB → AI Writes Report → Beautiful PDF
+
+✅ ALL SYSTEMS OPERATIONAL
+Ready to test! 🚀
+

@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validation Report - Pragati AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            color: #1a1a1a;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .report-header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .header-actions {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .header-btn {
+            background: rgba(255,255,255,0.9);
+            color: #1a1a1a;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .report-title {
+            font-size: 36px;
+            font-weight: 300;
+            margin-bottom: 12px;
+        }
+
+        .report-subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .report-meta {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .score-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        /* Content Sections */
+        .report-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #1a1a1a;
+        }
+
+        .section-content {
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        .bullet-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .bullet-list li {
+            padding: 12px 0;
+            padding-left: 30px;
+            position: relative;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .bullet-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        /* Cluster Section */
+        .cluster-section {
+            margin-bottom: 40px;
+        }
+
+        .cluster-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .cluster-name {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .cluster-score {
+            font-size: 24px;
+            font-weight: 600;
+            padding: 8px 20px;
+            border-radius: 20px;
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .parameter-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #1a1a1a;
+        }
+
+        .parameter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .parameter-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .parameter-score {
+            font-size: 16px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .parameter-content {
+            margin-top: 12px;
+        }
+
+        .strength-item {
+            color: #2e7d32;
+            margin: 8px 0;
+        }
+
+        .weakness-item {
+            color: #c62828;
+            margin: 8px 0;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f0f0f0;
+            border-top: 4px solid #1a1a1a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error State */
+        .error-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .error-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        /* Market Analysis */
+        .market-box {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .market-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1565c0;
+            margin-bottom: 12px;
+        }
+
+        /* TRL Section */
+        .trl-box {
+            background: #fff3e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .trl-level {
+            font-size: 32px;
+            font-weight: 600;
+            color: #e65100;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Report Header -->
+        <div class="report-header" id="reportHeader">
+            <div class="header-actions">
+                <button class="header-btn" onclick="downloadPDF()">
+                    <span>📥</span>
+                    <span>Download PDF</span>
+                </button>
+                <button class="header-btn" onclick="window.location.href='reports.html'">
+                    <span>←</span>
+                    <span>Back to Reports</span>
+                </button>
+            </div>
+            <h1 class="report-title" id="reportTitle">Loading Report...</h1>
+            <p class="report-subtitle" id="reportSubtitle"></p>
+            <div class="report-meta" id="reportMeta"></div>
+        </div>
+
+        <!-- Report Content -->
+        <div id="reportContent">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading report content from agent conversations...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get report ID from URL path (/report/<report_id>)
+        const pathParts = window.location.pathname.split('/').filter(p => p);
+        const reportId = pathParts[pathParts.length - 1] || new URLSearchParams(window.location.search).get('id');
+
+        let reportData = null;
+
+        // Load report data and generate AI report
+        async function loadReport() {
+            try {
+                // First, get basic report data
+                const response = await fetch(`/api/report/${reportId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load report');
+                }
+                
+                reportData = await response.json();
+                
+                // Update header with basic info
+                updateReportHeader(reportData);
+                
+                // Show loading state for AI generation
+                document.getElementById('reportContent').innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>🤖 AI is generating comprehensive report from agent conversations...</p>
+                        <p style="font-size: 14px; color: #666; margin-top: 10px;">Using gpt-4.1-mini to create detailed bullet-pointed analysis</p>
+                    </div>
+                `;
+                
+                // Generate AI-written report from conversations
+                const aiResponse = await fetch(`/api/report/${reportId}/generate`);
+                
+                if (!aiResponse.ok) {
+                    const errorData = await aiResponse.json();
+                    
+                    // If no conversations found, show helpful message and fallback to basic report
+                    if (errorData.error === "No agent conversations found in this report") {
+                        document.getElementById('reportContent').innerHTML = `
+                            <div class="error-state" style="text-align: center; padding: 40px;">
+                                <div class="error-icon" style="font-size: 48px;">📋</div>
+                                <h3 style="margin: 20px 0 10px 0;">No Agent Conversations Available</h3>
+                                <p style="color: #666; margin-bottom: 20px;">
+                                    This report was created before the conversation tracking feature was added, 
+                                    or the validation did not complete successfully.
+                                </p>
+                                <p style="color: #666; margin-bottom: 30px;">
+                                    To generate an AI-written report, please run a new validation.
+                                </p>
+                                <button onclick="renderReport(reportData)" 
+                                        style="padding: 12px 24px; background: #1a1a1a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                                    View Basic Report
+                                </button>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    throw new Error(errorData.error || 'Failed to generate AI report');
+                }
+                
+                const aiData = await aiResponse.json();
+                renderAIReport(aiData.ai_report, reportData);
+                
+            } catch (error) {
+                console.error('Error loading/generating report:', error);
+                document.getElementById('reportContent').innerHTML = `
+                    <div class="error-state">
+                        <div class="error-icon">❌</div>
+                        <p>Failed to generate report: ${error.message}</p>
+                        <p style="font-size: 14px; color: #666; margin-top: 10px;">Falling back to basic report view...</p>
+                    </div>
+                `;
+                // Fallback: render basic report
+                setTimeout(() => renderReport(reportData), 2000);
+            }
+        }
+
+        // Update report header
+        function updateReportHeader(data) {
+            document.getElementById('reportTitle').textContent = data.title || 'Validation Report';
+            document.getElementById('reportSubtitle').textContent = data.idea_name || '';
+            
+            const score = data.overall_score || 0;
+            const outcome = data.validation_outcome || 'UNKNOWN';
+            const date = new Date(data.created_at).toLocaleDateString();
+            
+            document.getElementById('reportMeta').innerHTML = `
+                <div class="meta-item">
+                    <span class="score-badge">${score.toFixed(1)}/100</span>
+                </div>
+                <div class="meta-item">
+                    <span>🎯 ${outcome}</span>
+                </div>
+                <div class="meta-item">
+                    <span>📅 ${date}</span>
+                </div>
+                <div class="meta-item">
+                    <span>🤖 ${data.agents_consulted || 0} Agents</span>
+                </div>
+            `;
+        }
+
+        // Render AI-generated comprehensive report
+        function renderAIReport(aiReport, reportData) {
+            let content = '';
+
+            // Executive Summary
+            const execSummary = aiReport.executive_summary || {};
+            if (execSummary.key_findings || execSummary.major_strengths || execSummary.critical_concerns) {
+                content += `
+                    <div class="report-section">
+                        <h2 class="section-title">Executive Summary</h2>
+                        <div class="section-content">
+                            ${execSummary.key_findings ? `
+                                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 20px;">📊 Key Findings</h3>
+                                <ul class="bullet-list">
+                                    ${execSummary.key_findings.map(f => `<li>${f}</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                            ${execSummary.major_strengths ? `
+                                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 20px; color: #2e7d32;">✅ Major Strengths</h3>
+                                <ul class="bullet-list">
+                                    ${execSummary.major_strengths.map(s => `<li class="strength-item">${s}</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                            ${execSummary.critical_concerns ? `
+                                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 20px; color: #c62828;">⚠️ Critical Concerns</h3>
+                                <ul class="bullet-list">
+                                    ${execSummary.critical_concerns.map(c => `<li class="weakness-item">${c}</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                            ${execSummary.strategic_recommendations ? `
+                                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 20px;">🎯 Strategic Recommendations</h3>
+                                <ul class="bullet-list">
+                                    ${execSummary.strategic_recommendations.map(r => `<li>${r}</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Market Analysis (TAM/SAM/SOM)
+            const marketAnalysis = aiReport.market_analysis;
+            if (marketAnalysis) {
+                content += `
+                    <div class="report-section">
+                        <h2 class="section-title">Market Size Analysis (TAM/SAM/SOM)</h2>
+                        <div class="section-content">
+                            ${marketAnalysis.tam ? `
+                                <div class="market-box">
+                                    <div class="market-title">📊 TAM (Total Addressable Market)</div>
+                                    <p><strong>Definition:</strong> ${marketAnalysis.tam.definition || 'N/A'}</p>
+                                    <p><strong>Estimated Size:</strong> ${marketAnalysis.tam.size || 'N/A'}</p>
+                                    <p><strong>Growth Rate:</strong> ${marketAnalysis.tam.growth_rate || 'N/A'}</p>
+                                    ${marketAnalysis.tam.assumptions ? `
+                                        <h4 style="margin-top: 12px;">Key Assumptions:</h4>
+                                        <ul class="bullet-list">
+                                            ${marketAnalysis.tam.assumptions.map(a => `<li>${a}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                    ${marketAnalysis.tam.trends ? `
+                                        <h4 style="margin-top: 12px;">Market Trends:</h4>
+                                        <ul class="bullet-list">
+                                            ${marketAnalysis.tam.trends.map(t => `<li>${t}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                            ${marketAnalysis.sam ? `
+                                <div class="market-box">
+                                    <div class="market-title">🎯 SAM (Serviceable Available Market)</div>
+                                    <p><strong>Definition:</strong> ${marketAnalysis.sam.definition || 'N/A'}</p>
+                                    <p><strong>Estimated Size:</strong> ${marketAnalysis.sam.size || 'N/A'}</p>
+                                    <p><strong>Geographic Focus:</strong> ${marketAnalysis.sam.geographic_focus || 'N/A'}</p>
+                                    ${marketAnalysis.sam.accessibility_factors ? `
+                                        <h4 style="margin-top: 12px;">Accessibility Factors:</h4>
+                                        <ul class="bullet-list">
+                                            ${marketAnalysis.sam.accessibility_factors.map(f => `<li>${f}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                    ${marketAnalysis.sam.demographics ? `
+                                        <h4 style="margin-top: 12px;">Target Demographics:</h4>
+                                        <ul class="bullet-list">
+                                            ${marketAnalysis.sam.demographics.map(d => `<li>${d}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                            ${marketAnalysis.som ? `
+                                <div class="market-box">
+                                    <div class="market-title">🚀 SOM (Serviceable Obtainable Market)</div>
+                                    <p><strong>Definition:</strong> ${marketAnalysis.som.definition || 'N/A'}</p>
+                                    <p><strong>Estimated Size:</strong> ${marketAnalysis.som.size || 'N/A'}</p>
+                                    <p><strong>Target Market Share:</strong> ${marketAnalysis.som.market_share || 'N/A'}</p>
+                                    ${marketAnalysis.som.competitive_landscape ? `
+                                        <h4 style="margin-top: 12px;">Competitive Landscape:</h4>
+                                        <ul class="bullet-list">
+                                            ${marketAnalysis.som.competitive_landscape.map(c => `<li>${c}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                    ${marketAnalysis.som.capture_strategy ? `
+                                        <h4 style="margin-top: 12px;">Market Capture Strategy:</h4>
+                                        <ul class="bullet-list">
+                                            ${marketAnalysis.som.capture_strategy.map(s => `<li>${s}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                            ${marketAnalysis.opportunity_summary ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>💡 Market Opportunity Summary</h3>
+                                    <ul class="bullet-list">
+                                        ${marketAnalysis.opportunity_summary.map(o => `<li>${o}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // TRL Analysis
+            const trlAnalysis = aiReport.trl_analysis;
+            if (trlAnalysis) {
+                content += `
+                    <div class="report-section">
+                        <h2 class="section-title">Technology Readiness Level (TRL) Analysis</h2>
+                        <div class="section-content">
+                            ${trlAnalysis.current_trl ? `
+                                <div class="trl-box">
+                                    <div class="trl-level">TRL ${trlAnalysis.current_trl.level || 'N/A'}/9</div>
+                                    ${trlAnalysis.current_trl.justification ? `
+                                        <h4>Justification:</h4>
+                                        <ul class="bullet-list">
+                                            ${trlAnalysis.current_trl.justification.map(j => `<li>${j}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                    ${trlAnalysis.current_trl.components_status ? `
+                                        <h4 style="margin-top: 12px;">Technology Components Status:</h4>
+                                        <ul class="bullet-list">
+                                            ${trlAnalysis.current_trl.components_status.map(c => `<li>${c}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                            ${trlAnalysis.timeline ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>⏱️ TRL Progression Timeline</h3>
+                                    ${trlAnalysis.timeline.trl_1_3 ? `
+                                        <div style="margin: 15px 0;">
+                                            <strong>TRL 1-3 (Concept Development):</strong> ${trlAnalysis.timeline.trl_1_3.timeframe || 'N/A'}
+                                            ${trlAnalysis.timeline.trl_1_3.milestones ? `
+                                                <ul class="bullet-list">
+                                                    ${trlAnalysis.timeline.trl_1_3.milestones.map(m => `<li>${m}</li>`).join('')}
+                                                </ul>
+                                            ` : ''}
+                                        </div>
+                                    ` : ''}
+                                    ${trlAnalysis.timeline.trl_4_6 ? `
+                                        <div style="margin: 15px 0;">
+                                            <strong>TRL 4-6 (Validation & Testing):</strong> ${trlAnalysis.timeline.trl_4_6.timeframe || 'N/A'}
+                                            ${trlAnalysis.timeline.trl_4_6.milestones ? `
+                                                <ul class="bullet-list">
+                                                    ${trlAnalysis.timeline.trl_4_6.milestones.map(m => `<li>${m}</li>`).join('')}
+                                                </ul>
+                                            ` : ''}
+                                        </div>
+                                    ` : ''}
+                                    ${trlAnalysis.timeline.trl_7_9 ? `
+                                        <div style="margin: 15px 0;">
+                                            <strong>TRL 7-9 (Market Readiness):</strong> ${trlAnalysis.timeline.trl_7_9.timeframe || 'N/A'}
+                                            ${trlAnalysis.timeline.trl_7_9.milestones ? `
+                                                <ul class="bullet-list">
+                                                    ${trlAnalysis.timeline.trl_7_9.milestones.map(m => `<li>${m}</li>`).join('')}
+                                                </ul>
+                                            ` : ''}
+                                        </div>
+                                    ` : ''}
+                                    ${trlAnalysis.timeline.time_to_market ? `
+                                        <p style="margin-top: 15px;"><strong>Estimated Time to Market:</strong> ${trlAnalysis.timeline.time_to_market}</p>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                            ${trlAnalysis.risks ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>⚠️ Technology Risks & Challenges</h3>
+                                    <ul class="bullet-list">
+                                        ${trlAnalysis.risks.map(r => `<li class="weakness-item">${r}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            ${trlAnalysis.strengths ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>✅ Technology Strengths</h3>
+                                    <ul class="bullet-list">
+                                        ${trlAnalysis.strengths.map(s => `<li class="strength-item">${s}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            ${trlAnalysis.recommendations ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>🎯 Recommendations for TRL Advancement</h3>
+                                    <ul class="bullet-list">
+                                        ${trlAnalysis.recommendations.map(r => `<li>${r}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Cluster Reports (Detailed Analysis)
+            const clusterReports = aiReport.cluster_reports || {};
+            if (Object.keys(clusterReports).length > 0) {
+                content += `
+                    <div class="report-section">
+                        <h2 class="section-title">Detailed Analysis by Category</h2>
+                `;
+
+                for (const clusterName in clusterReports) {
+                    const cluster = clusterReports[clusterName];
+                    const clusterScore = cluster.cluster_score || 0;
+                    
+                    content += `
+                        <div class="cluster-section">
+                            <div class="cluster-header">
+                                <div class="cluster-name">${clusterName}</div>
+                                <div class="cluster-score">${clusterScore.toFixed(1)}/100</div>
+                            </div>
+                            
+                            ${cluster.overview ? `
+                                <div style="margin: 15px 0;">
+                                    <h4>Overview:</h4>
+                                    <ul class="bullet-list">
+                                        ${cluster.overview.map(o => `<li>${o}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            
+                            ${cluster.parameters ? cluster.parameters.map(param => `
+                                <div class="parameter-item">
+                                    <div class="parameter-header">
+                                        <div class="parameter-name">${param.name || 'Unknown Parameter'}</div>
+                                        <div class="parameter-score">${param.score ? param.score.toFixed(1) : 'N/A'}/100</div>
+                                    </div>
+                                    <div class="parameter-content">
+                                        ${param.findings ? `
+                                            <div style="margin-bottom: 12px;">
+                                                <strong>📝 Findings:</strong>
+                                                <ul class="bullet-list">
+                                                    ${param.findings.map(f => `<li>${f}</li>`).join('')}
+                                                </ul>
+                                            </div>
+                                        ` : ''}
+                                        ${param.strengths && param.strengths.length > 0 ? `
+                                            <div style="margin-top: 12px;">
+                                                <strong style="color: #2e7d32;">✅ Strengths:</strong>
+                                                <ul class="bullet-list">
+                                                    ${param.strengths.map(s => `<li class="strength-item">${s}</li>`).join('')}
+                                                </ul>
+                                            </div>
+                                        ` : ''}
+                                        ${param.weaknesses && param.weaknesses.length > 0 ? `
+                                            <div style="margin-top: 12px;">
+                                                <strong style="color: #c62828;">❌ Weaknesses:</strong>
+                                                <ul class="bullet-list">
+                                                    ${param.weaknesses.map(w => `<li class="weakness-item">${w}</li>`).join('')}
+                                                </ul>
+                                            </div>
+                                        ` : ''}
+                                        ${param.recommendations && param.recommendations.length > 0 ? `
+                                            <div style="margin-top: 12px;">
+                                                <strong>🎯 Recommendations:</strong>
+                                                <ul class="bullet-list">
+                                                    ${param.recommendations.map(r => `<li>${r}</li>`).join('')}
+                                                </ul>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `).join('') : ''}
+                            
+                            ${cluster.cluster_summary ? `
+                                <div style="margin-top: 20px;">
+                                    <h4>Cluster Summary:</h4>
+                                    <ul class="bullet-list">
+                                        ${cluster.cluster_summary.map(s => `<li>${s}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+
+                content += `</div>`;
+            }
+
+            // Pros and Cons
+            const prosCons = aiReport.pros_cons;
+            if (prosCons) {
+                content += `
+                    <div class="report-section">
+                        <h2 class="section-title">Comprehensive Pros and Cons Analysis</h2>
+                        <div class="section-content">
+                            ${prosCons.advantages ? `
+                                <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 15px 0;">
+                                    <h3 style="color: #2e7d32; margin-bottom: 12px;">✅ Major Advantages</h3>
+                                    <ul class="bullet-list">
+                                        ${prosCons.advantages.map(a => `<li class="strength-item">${a}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            ${prosCons.disadvantages ? `
+                                <div style="background: #ffebee; padding: 20px; border-radius: 8px; margin: 15px 0;">
+                                    <h3 style="color: #c62828; margin-bottom: 12px;">❌ Key Disadvantages</h3>
+                                    <ul class="bullet-list">
+                                        ${prosCons.disadvantages.map(d => `<li class="weakness-item">${d}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            ${prosCons.balanced_assessment ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>⚖️ Balanced Assessment</h3>
+                                    <ul class="bullet-list">
+                                        ${prosCons.balanced_assessment.map(b => `<li>${b}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Weaknesses Analysis
+            const weaknessesAnalysis = aiReport.weaknesses_analysis;
+            if (weaknessesAnalysis) {
+                content += `
+                    <div class="report-section">
+                        <h2 class="section-title">Detailed Weaknesses Analysis</h2>
+                        <div class="section-content">
+                            ${weaknessesAnalysis.critical && weaknessesAnalysis.critical.length > 0 ? `
+                                <div style="background: #ffebee; padding: 20px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #c62828;">
+                                    <h3 style="color: #c62828; margin-bottom: 12px;">🔴 Critical Weaknesses (Score < 40/100)</h3>
+                                    ${weaknessesAnalysis.critical.map(w => `
+                                        <div style="margin: 12px 0;">
+                                            <strong>• ${w.weakness || 'Unknown'}</strong>
+                                            ${w.impact ? `<p style="margin: 4px 0; font-size: 14px; color: #666;"><em>Impact:</em> ${w.impact}</p>` : ''}
+                                            ${w.action ? `<p style="margin: 4px 0; font-size: 14px; color: #c62828;"><em>Action Required:</em> ${w.action}</p>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            ${weaknessesAnalysis.high_priority && weaknessesAnalysis.high_priority.length > 0 ? `
+                                <div style="background: #fff3e0; padding: 20px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #e65100;">
+                                    <h3 style="color: #e65100; margin-bottom: 12px;">🟠 High Priority Weaknesses (Score 40-50/100)</h3>
+                                    ${weaknessesAnalysis.high_priority.map(w => `
+                                        <div style="margin: 12px 0;">
+                                            <strong>• ${w.weakness || 'Unknown'}</strong>
+                                            ${w.impact ? `<p style="margin: 4px 0; font-size: 14px; color: #666;"><em>Impact:</em> ${w.impact}</p>` : ''}
+                                            ${w.action ? `<p style="margin: 4px 0; font-size: 14px; color: #e65100;"><em>Action Required:</em> ${w.action}</p>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            ${weaknessesAnalysis.moderate && weaknessesAnalysis.moderate.length > 0 ? `
+                                <div style="background: #fff9c4; padding: 20px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #f9a825;">
+                                    <h3 style="color: #f9a825; margin-bottom: 12px;">🟡 Moderate Weaknesses (Score 50-60/100)</h3>
+                                    ${weaknessesAnalysis.moderate.map(w => `
+                                        <div style="margin: 12px 0;">
+                                            <strong>• ${w.weakness || 'Unknown'}</strong>
+                                            ${w.impact ? `<p style="margin: 4px 0; font-size: 14px; color: #666;"><em>Impact:</em> ${w.impact}</p>` : ''}
+                                            ${w.action ? `<p style="margin: 4px 0; font-size: 14px; color: #f9a825;"><em>Action Required:</em> ${w.action}</p>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            ${weaknessesAnalysis.patterns ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>📊 Weakness Patterns</h3>
+                                    <ul class="bullet-list">
+                                        ${weaknessesAnalysis.patterns.map(p => `<li>${p}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            ${weaknessesAnalysis.remediation_strategy ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>🔧 Remediation Strategy</h3>
+                                    <ul class="bullet-list">
+                                        ${weaknessesAnalysis.remediation_strategy.map(r => `<li>${r}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Conclusion
+            const conclusion = aiReport.conclusion;
+            if (conclusion) {
+                content += `
+                    <div class="report-section">
+                        <h2 class="section-title">Conclusion & Final Verdict</h2>
+                        <div class="section-content">
+                            ${conclusion.investment_decision ? `
+                                <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 15px 0; text-align: center;">
+                                    <h3 style="font-size: 24px; color: #1565c0; margin-bottom: 12px;">${conclusion.investment_decision}</h3>
+                                </div>
+                            ` : ''}
+                            ${conclusion.final_verdict ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>📋 Final Verdict</h3>
+                                    <ul class="bullet-list">
+                                        ${conclusion.final_verdict.map(v => `<li>${v}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            ${conclusion.path_forward ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>📍 Path Forward</h3>
+                                    <ul class="bullet-list">
+                                        ${conclusion.path_forward.map(p => `<li>${p}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            ${conclusion.success_factors ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>🎯 Success Factors</h3>
+                                    <ul class="bullet-list">
+                                        ${conclusion.success_factors.map(s => `<li>${s}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            ${conclusion.risk_mitigation ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>🛡️ Risk Mitigation</h3>
+                                    <ul class="bullet-list">
+                                        ${conclusion.risk_mitigation.map(r => `<li>${r}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            ${conclusion.market_assessment ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>📈 Market Opportunity Assessment</h3>
+                                    <ul class="bullet-list">
+                                        ${conclusion.market_assessment.map(m => `<li>${m}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('reportContent').innerHTML = content || `
+                <div class="error-state">
+                    <div class="error-icon">📝</div>
+                    <p>AI report generated but no content sections available.</p>
+                </div>
+            `;
+        }
+
+        // Render report based on agent conversations (fallback)
+        function renderReport(data) {
+            // Update header
+            document.getElementById('reportTitle').textContent = data.title || 'Validation Report';
+            document.getElementById('reportSubtitle').textContent = data.idea_name || '';
+            
+            const score = data.overall_score || 0;
+            const outcome = data.validation_outcome || 'UNKNOWN';
+            const date = new Date(data.created_at).toLocaleDateString();
+            
+            document.getElementById('reportMeta').innerHTML = `
+                <div class="meta-item">
+                    <span class="score-badge">${score.toFixed(1)}/100</span>
+                </div>
+                <div class="meta-item">
+                    <span>🎯 ${outcome}</span>
+                </div>
+                <div class="meta-item">
+                    <span>📅 ${date}</span>
+                </div>
+                <div class="meta-item">
+                    <span>🤖 ${data.agents_consulted || 0} Agents</span>
+                </div>
+            `;
+
+            // Extract conversations
+            const evaluatedData = data.evaluated_data || 
+                                data.raw_validation_result?.evaluated_data ||
+                                {};
+            
+            // Group conversations by cluster
+            const clusters = {};
+            
+            for (const cluster in evaluatedData) {
+                if (typeof evaluatedData[cluster] === 'object' && evaluatedData[cluster] !== null) {
+                    clusters[cluster] = [];
+                    
+                    for (const parameter in evaluatedData[cluster]) {
+                        if (typeof evaluatedData[cluster][parameter] === 'object' && evaluatedData[cluster][parameter] !== null) {
+                            for (const subParam in evaluatedData[cluster][parameter]) {
+                                const conv = evaluatedData[cluster][parameter][subParam];
+                                if (conv && typeof conv === 'object') {
+                                    clusters[cluster].push({
+                                        parameter: parameter,
+                                        sub_parameter: subParam,
+                                        assigned_score: conv.assigned_score || conv.assignedScore || conv.score || 0,
+                                        explanation: conv.explanation || 'No explanation provided',
+                                        strengths: conv.strengths || [],
+                                        weaknesses: conv.weaknesses || [],
+                                        key_insights: conv.key_insights || conv.keyInsights || [],
+                                        recommendations: conv.recommendations || []
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Render content
+            let content = '';
+
+            // Executive Summary
+            const execSummary = data.detailed_analysis?.executive_summary || {};
+            if (execSummary.key_findings || execSummary.major_strengths || execSummary.critical_concerns) {
+                content += `
+                    <div class="report-section">
+                        <h2 class="section-title">Executive Summary</h2>
+                        <div class="section-content">
+                            ${execSummary.key_findings ? `
+                                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 20px;">Key Findings</h3>
+                                <ul class="bullet-list">
+                                    ${execSummary.key_findings.map(f => `<li>${f}</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                            ${execSummary.major_strengths ? `
+                                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 20px; color: #2e7d32;">Major Strengths</h3>
+                                <ul class="bullet-list">
+                                    ${execSummary.major_strengths.map(s => `<li class="strength-item">${s}</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                            ${execSummary.critical_concerns ? `
+                                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 20px; color: #c62828;">Critical Concerns</h3>
+                                <ul class="bullet-list">
+                                    ${execSummary.critical_concerns.map(c => `<li class="weakness-item">${c}</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Detailed Analysis by Cluster (from agent conversations)
+            if (Object.keys(clusters).length > 0) {
+                content += `
+                    <div class="report-section">
+                        <h2 class="section-title">Detailed Analysis by Category</h2>
+                `;
+
+                for (const clusterName in clusters) {
+                    const clusterParams = clusters[clusterName];
+                    const avgScore = clusterParams.reduce((sum, p) => sum + p.assigned_score, 0) / clusterParams.length;
+                    
+                    content += `
+                        <div class="cluster-section">
+                            <div class="cluster-header">
+                                <div class="cluster-name">${clusterName}</div>
+                                <div class="cluster-score">${avgScore.toFixed(1)}/100</div>
+                            </div>
+                    `;
+
+                    for (const param of clusterParams) {
+                        content += `
+                            <div class="parameter-item">
+                                <div class="parameter-header">
+                                    <div class="parameter-name">${param.sub_parameter}</div>
+                                    <div class="parameter-score">${param.assigned_score.toFixed(1)}/100</div>
+                                </div>
+                                <div class="parameter-content">
+                                    <p style="margin-bottom: 12px;">${param.explanation}</p>
+                                    ${param.strengths.length > 0 ? `
+                                        <div style="margin-top: 12px;">
+                                            <strong style="color: #2e7d32;">✅ Strengths:</strong>
+                                            <ul class="bullet-list">
+                                                ${param.strengths.map(s => `<li class="strength-item">${s}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+                                    ${param.weaknesses.length > 0 ? `
+                                        <div style="margin-top: 12px;">
+                                            <strong style="color: #c62828;">❌ Weaknesses:</strong>
+                                            <ul class="bullet-list">
+                                                ${param.weaknesses.map(w => `<li class="weakness-item">${w}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+                                    ${param.key_insights.length > 0 ? `
+                                        <div style="margin-top: 12px;">
+                                            <strong>💡 Key Insights:</strong>
+                                            <ul class="bullet-list">
+                                                ${param.key_insights.map(i => `<li>${i}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+                                    ${param.recommendations.length > 0 ? `
+                                        <div style="margin-top: 12px;">
+                                            <strong>🎯 Recommendations:</strong>
+                                            <ul class="bullet-list">
+                                                ${param.recommendations.map(r => `<li>${r}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    content += `</div>`;
+                }
+
+                content += `</div>`;
+            }
+
+            // Market Analysis (TAM/SAM/SOM) - if available from AI report writer
+            const marketAnalysis = data.detailed_analysis?.market_analysis || data.ai_report?.market_analysis;
+            if (marketAnalysis) {
+                content += `
+                    <div class="report-section">
+                        <h2 class="section-title">Market Size Analysis (TAM/SAM/SOM)</h2>
+                        <div class="section-content">
+                            ${marketAnalysis.tam ? `
+                                <div class="market-box">
+                                    <div class="market-title">📊 TAM (Total Addressable Market)</div>
+                                    <p><strong>Definition:</strong> ${marketAnalysis.tam.definition || 'N/A'}</p>
+                                    <p><strong>Estimated Size:</strong> ${marketAnalysis.tam.size || 'N/A'}</p>
+                                    <p><strong>Growth Rate:</strong> ${marketAnalysis.tam.growth_rate || 'N/A'}</p>
+                                    ${marketAnalysis.tam.assumptions ? `
+                                        <h4 style="margin-top: 12px;">Key Assumptions:</h4>
+                                        <ul class="bullet-list">
+                                            ${marketAnalysis.tam.assumptions.map(a => `<li>${a}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                            ${marketAnalysis.sam ? `
+                                <div class="market-box">
+                                    <div class="market-title">🎯 SAM (Serviceable Available Market)</div>
+                                    <p><strong>Definition:</strong> ${marketAnalysis.sam.definition || 'N/A'}</p>
+                                    <p><strong>Estimated Size:</strong> ${marketAnalysis.sam.size || 'N/A'}</p>
+                                    <p><strong>Geographic Focus:</strong> ${marketAnalysis.sam.geographic_focus || 'N/A'}</p>
+                                    ${marketAnalysis.sam.accessibility_factors ? `
+                                        <h4 style="margin-top: 12px;">Accessibility Factors:</h4>
+                                        <ul class="bullet-list">
+                                            ${marketAnalysis.sam.accessibility_factors.map(f => `<li>${f}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                            ${marketAnalysis.som ? `
+                                <div class="market-box">
+                                    <div class="market-title">🚀 SOM (Serviceable Obtainable Market)</div>
+                                    <p><strong>Definition:</strong> ${marketAnalysis.som.definition || 'N/A'}</p>
+                                    <p><strong>Estimated Size:</strong> ${marketAnalysis.som.size || 'N/A'}</p>
+                                    <p><strong>Target Market Share:</strong> ${marketAnalysis.som.market_share || 'N/A'}</p>
+                                    ${marketAnalysis.som.capture_strategy ? `
+                                        <h4 style="margin-top: 12px;">Market Capture Strategy:</h4>
+                                        <ul class="bullet-list">
+                                            ${marketAnalysis.som.capture_strategy.map(s => `<li>${s}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // TRL Analysis - if available from AI report writer
+            const trlAnalysis = data.detailed_analysis?.trl_analysis || data.ai_report?.trl_analysis;
+            if (trlAnalysis) {
+                content += `
+                    <div class="report-section">
+                        <h2 class="section-title">Technology Readiness Level (TRL) Analysis</h2>
+                        <div class="section-content">
+                            ${trlAnalysis.current_trl ? `
+                                <div class="trl-box">
+                                    <div class="trl-level">TRL ${trlAnalysis.current_trl.level || 'N/A'}/9</div>
+                                    ${trlAnalysis.current_trl.justification ? `
+                                        <h4>Justification:</h4>
+                                        <ul class="bullet-list">
+                                            ${trlAnalysis.current_trl.justification.map(j => `<li>${j}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                            ${trlAnalysis.timeline ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>⏱️ TRL Progression Timeline</h3>
+                                    ${trlAnalysis.timeline.time_to_market ? `
+                                        <p><strong>Estimated Time to Market:</strong> ${trlAnalysis.timeline.time_to_market}</p>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                            ${trlAnalysis.recommendations ? `
+                                <div style="margin-top: 20px;">
+                                    <h3>🎯 Recommendations for TRL Advancement</h3>
+                                    <ul class="bullet-list">
+                                        ${trlAnalysis.recommendations.map(r => `<li>${r}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Recommendations
+            const recommendations = data.detailed_analysis?.detailed_recommendations || [];
+            if (recommendations.length > 0) {
+                content += `
+                    <div class="report-section">
+                        <h2 class="section-title">Recommendations & Next Steps</h2>
+                        <ul class="bullet-list">
+                            ${recommendations.map(r => `<li>${r}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            document.getElementById('reportContent').innerHTML = content || `
+                <div class="error-state">
+                    <div class="error-icon">📝</div>
+                    <p>No report content available. Agent conversations may not be available for this report.</p>
+                </div>
+            `;
+        }
+
+        // Download PDF
+        function downloadPDF() {
+            if (!reportId) {
+                alert('No report ID available');
+                return;
+            }
+            window.location.href = `/api/report/${reportId}/download-pdf-file`;
+        }
+
+        // Load report on page load
+        if (reportId) {
+            loadReport();
+        } else {
+            document.getElementById('reportContent').innerHTML = `
+                <div class="error-state">
+                    <div class="error-icon">❌</div>
+                    <p>No report ID provided</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
+

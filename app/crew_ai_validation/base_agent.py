@@ -36,12 +36,12 @@ class BaseValidationAgent(ABC):
                 role=f"{self.sub_parameter} Validation Specialist",
                 goal=self.get_default_goal(),
                 backstory=self.get_default_backstory(),
-                verbose=True,
-                allow_delegation=True,
+                verbose=False,  # Disable verbose for speed
+                allow_delegation=False,  # Disable delegation for speed
                 llm=self.llm,
                 tools=self.get_specialized_tools(),
-                max_iter=3,  # Allow multiple iterations for argumentation
-                memory=True  # Enable memory for cross-agent discussions
+                max_iter=1,  # Single iteration for speed
+                memory=False  # Disable memory for speed
             )
         return self._agent
     

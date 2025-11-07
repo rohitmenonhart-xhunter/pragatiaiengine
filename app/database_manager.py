@@ -87,6 +87,9 @@ class DatabaseManager:
                 # Raw validation data (for reference - keep original 5.0 scale)
                 "raw_validation_result": validation_result,
                 
+                # Store evaluated_data at top level for easy access (agent conversations)
+                "evaluated_data": validation_result.get("evaluated_data", {}),
+                
                 # Metadata
                 "version": "3.0.0",
                 "system": "Pragati AI Engine"

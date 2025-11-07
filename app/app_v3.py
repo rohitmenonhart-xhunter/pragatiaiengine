@@ -329,13 +329,31 @@ def validate_pitch_deck():
             
             # Run validation
             logger.info(f"Starting validation for: {extracted_info['idea_name']}")
-            broadcast_agent_message("System", f"🚀 Starting validation with 109+ agents", "system")
+            broadcast_agent_message("System", f"🚀 Starting validation with agents", "system")
             
             result = validate_idea(
                 extracted_info['idea_name'],
                 extracted_info['idea_concept'],
                 custom_weights
             )
+            
+            # Check if validation succeeded
+            if not result or result.get('error'):
+                error_msg = result.get('error', 'Unknown error') if result else 'Validation returned null'
+                logger.error(f"Validation failed: {error_msg}")
+                return jsonify({
+                    "error": "Validation failed",
+                    "details": error_msg,
+                    "idea_name": extracted_info['idea_name']
+                }), 500
+            
+            # Ensure result has required fields
+            if 'overall_score' not in result:
+                result['overall_score'] = 0
+            if 'validation_outcome' not in result:
+                result['validation_outcome'] = 'UNKNOWN'
+            if 'evaluated_data' not in result:
+                result['evaluated_data'] = {}
             
             # Save to MongoDB
             report_id = None
@@ -345,20 +363,22 @@ def validate_pitch_deck():
                         user_id=user_id,
                         title=title,
                         validation_result=result,
-                        idea_name=extracted_info['idea_name'],
-                        idea_concept=extracted_info['idea_concept'],
+                        idea_name=extracted_info.get('idea_name', title),
+                        idea_concept=extracted_info.get('idea_concept', ''),
                         source_type="pitch_deck"
                     )
                     logger.info(f"✅ Saved pitch deck report to MongoDB: {report_id}")
                     broadcast_agent_message("System", f"💾 Report saved to database: {report_id}", "success")
                 except Exception as e:
                     logger.error(f"❌ Failed to save to MongoDB: {e}")
+                    import traceback
+                    traceback.print_exc()
                     # Continue without failing the validation
             
             # Add extracted information to result
             result['extracted_from_pitch_deck'] = True
             result['original_filename'] = file.filename
-            result['extracted_idea_name'] = extracted_info['idea_name']
+            result['extracted_idea_name'] = extracted_info.get('idea_name', title)
             
             # Add report ID to result
             if report_id:

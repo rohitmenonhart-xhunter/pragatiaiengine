@@ -19,6 +19,15 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# ============================================
+# TEST MODE - Set to True to use only 2 agents for testing
+# ============================================
+TEST_MODE = True  # Change to False to use all 109 agents
+TEST_AGENT_LIMIT = 2  # Number of agents to use in test mode
+# ============================================
+# MOCK_MODE has been removed - all agents now run real evaluations
+# ============================================
+
 class ValidationOutcome(Enum):
     """Validation outcome categories (100-point scale)"""
     EXCELLENT = "EXCELLENT"      # 90-100
@@ -83,10 +92,13 @@ class CrewAIValidationOrchestrator:
         if not self.openai_api_key:
             raise ValueError("OPENAI_API_KEY environment variable is required")
         
+        # Fast LLM for quick processing (under 20 mins)
         self.llm = ChatOpenAI(
             openai_api_key=self.openai_api_key,
-            temperature=0.3,
-            model="gpt-4o"
+            temperature=0.2,  # Lower for faster, more focused responses
+            model="gpt-4.1-mini",  # Faster model
+            request_timeout=45,  # 45 second timeout per agent
+            max_retries=1  # Only 1 retry to save time
         )
         
         # Initialize agent registry
@@ -267,14 +279,31 @@ class CrewAIValidationOrchestrator:
         }
     
     def _initialize_all_agents(self):
-        """Initialize all 109 specialized agents"""
+        """Initialize specialized agents (2 for testing, 109 for production)"""
         agent_count = 0
         
+        if TEST_MODE:
+            print(f"⚠️  TEST MODE: Initializing only {TEST_AGENT_LIMIT} agents for testing")
+            print(f"⚠️  All other agents will be SKIPPED to save credits")
+        
         for cluster_name, cluster_data in self.evaluation_framework.items():
+            if TEST_MODE and agent_count >= TEST_AGENT_LIMIT:
+                print(f"✅ Test mode: Reached limit, stopping initialization")
+                break
+                
             for parameter_name, parameter_data in cluster_data.items():
+                if TEST_MODE and agent_count >= TEST_AGENT_LIMIT:
+                    break
+                    
                 for sub_parameter_name, sub_parameter_config in parameter_data.items():
+                    # TEST MODE: Stop BEFORE creating more agents
+                    if TEST_MODE and agent_count >= TEST_AGENT_LIMIT:
+                        break
+                    
                     agent_count += 1
                     agent_id = f"agent_{agent_count:03d}_{sub_parameter_name.replace(' ', '_').replace('(', '').replace(')', '').replace('/', '_').lower()}"
+                    
+                    print(f"  Creating agent {agent_count}/{TEST_AGENT_LIMIT if TEST_MODE else '109'}: {sub_parameter_name}")
                     
                     # Create specialized agent
                     agent = self._create_specialized_agent(
@@ -305,8 +334,15 @@ class CrewAIValidationOrchestrator:
                         'sub_parameter': sub_parameter_name,
                         'config': sub_parameter_config
                     }
+                    
+                    # TEST MODE: Stop immediately after reaching limit
+                    if TEST_MODE and agent_count >= TEST_AGENT_LIMIT:
+                        print(f"✅ Test mode: Reached {agent_count} agents, stopping now")
+                        break
         
-        print(f"Initialized {agent_count} specialized validation agents")
+        mode_str = "TEST MODE" if TEST_MODE else "PRODUCTION MODE"
+        print(f"✅ Initialized {agent_count} specialized validation agents ({mode_str})")
+        print(f"📊 Total agents in registry: {len(self.agent_registry)}")
         
         # Test broadcast to verify connection
         try:
@@ -616,50 +652,62 @@ class CrewAIValidationOrchestrator:
         
         return base_description
     
-    async def _execute_agent_phase(self, tasks: List[tuple]) -> List[AgentEvaluation]:
-        """Execute a phase of agent tasks"""
-        results = []
+    async def _execute_single_agent(self, agent_id: str, task: Task) -> AgentEvaluation:
+        """Execute a single agent task"""
+        agent_info = self.agent_registry[agent_id]
+        start_time = datetime.now()
         
-        for agent_id, task in tasks:
-            agent_info = self.agent_registry[agent_id]
-            print(f"\n🔍 Starting Agent: {agent_info['sub_parameter']} ({agent_info['cluster']})")
-            print(f"   📋 Task: Evaluating {agent_info['sub_parameter']} for the startup idea")
+        # Execute the agent with real AI evaluation
+        try:
+            print(f"\n🔍 {agent_info['sub_parameter']} ({agent_info['cluster']}) - Starting")
             
-            start_time = datetime.now()
-            try:
-                # Execute the task
-                crew = Crew(
-                    agents=[task.agent],
-                    tasks=[task],
-                    process=Process.sequential,
-                    verbose=True,  # Enable verbose output for real-time agent communication
-                    output_log_file=False,
-                    step_callback=self._agent_step_callback,
-                    planning=False,  # Disable planning to avoid prompts
-                    memory=False  # Disable memory to avoid prompts
-                )
-                
-                print(f"   🚀 Agent {agent_info['sub_parameter']} is thinking...")
-                self._broadcast_message("System", f"🚀 {agent_info['sub_parameter']} agent is analyzing...", "system")
-                result = crew.kickoff()
-                
-                # Parse result
-                evaluation = self._parse_agent_result(
-                    agent_id, result, start_time
-                )
-                results.append(evaluation)
-                
-                # Show completion status
-                print(f"   ✅ Agent {agent_info['sub_parameter']} completed!")
-                print(f"   📊 Score: {evaluation.assigned_score:.2f}/5.0")
-                self._broadcast_message("System", f"✅ {agent_info['sub_parameter']} completed! Score: {evaluation.assigned_score:.2f}/5.0", "success")
-                print(f"   💡 Key insight: {evaluation.explanation[:100]}...")
-                
-            except Exception as e:
-                print(f"   ❌ Error executing agent {agent_info['sub_parameter']}: {e}")
-                # Create fallback evaluation
-                evaluation = self._create_fallback_evaluation(agent_id, start_time)
-                results.append(evaluation)
+            # Execute the task with minimal verbosity for speed
+            crew = Crew(
+                agents=[task.agent],
+                tasks=[task],
+                process=Process.sequential,
+                verbose=False,  # Disable verbose for speed
+                output_log_file=False,
+                planning=False,
+                memory=False
+            )
+            
+            self._broadcast_message("System", f"🚀 {agent_info['sub_parameter']} analyzing...", "system")
+            result = crew.kickoff()
+            
+            # Parse result
+            evaluation = self._parse_agent_result(agent_id, result, start_time)
+            
+            print(f"   ✅ {agent_info['sub_parameter']} completed! Score: {evaluation.assigned_score:.1f}/100")
+            self._broadcast_message("System", f"✅ {agent_info['sub_parameter']}: {evaluation.assigned_score:.1f}/100", "success")
+            
+            return evaluation
+            
+        except Exception as e:
+            print(f"   ❌ {agent_info['sub_parameter']} error: {str(e)[:50]}")
+            return self._create_fallback_evaluation(agent_id, start_time)
+    
+    async def _execute_agent_phase(self, tasks: List[tuple]) -> List[AgentEvaluation]:
+        """Execute agent tasks in parallel batches for speed"""
+        results = []
+        batch_size = 10  # Process 10 agents at a time
+        
+        print(f"\n🚀 Processing {len(tasks)} agents in parallel batches of {batch_size}")
+        
+        for i in range(0, len(tasks), batch_size):
+            batch = tasks[i:i+batch_size]
+            print(f"\n📦 Batch {i//batch_size + 1}/{(len(tasks) + batch_size - 1)//batch_size}")
+            
+            # Execute batch in parallel
+            batch_tasks = [self._execute_single_agent(agent_id, task) for agent_id, task in batch]
+            batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
+            
+            # Filter out exceptions and add valid results
+            for result in batch_results:
+                if isinstance(result, AgentEvaluation):
+                    results.append(result)
+                elif isinstance(result, Exception):
+                    print(f"   ⚠️ Batch exception: {str(result)[:50]}")
         
         return results
     
@@ -733,6 +781,15 @@ class CrewAIValidationOrchestrator:
         
         return results
     
+    def _ensure_string_explanation(self, explanation: Any) -> str:
+        """Ensure explanation is always a string, converting lists if needed"""
+        if explanation is None:
+            return 'Analysis completed'
+        if isinstance(explanation, list):
+            # Join list items with periods
+            return '. '.join(str(item) for item in explanation if item)
+        return str(explanation)
+    
     def _parse_agent_result(self, agent_id: str, result: Any, start_time: datetime) -> AgentEvaluation:
         """Parse agent execution result into structured format (100-scale scoring)"""
         agent_info = self.agent_registry[agent_id]
@@ -766,6 +823,10 @@ class CrewAIValidationOrchestrator:
             # Clamp to valid range
             score = max(0.0, min(100.0, score))
             
+            # Ensure explanation is always a string (fix for list issue)
+            raw_explanation = result_data.get('explanation', 'Analysis completed')
+            explanation_str = self._ensure_string_explanation(raw_explanation)
+            
             return AgentEvaluation(
                 agent_id=agent_id,
                 parameter_name=agent_info['sub_parameter'],
@@ -774,7 +835,7 @@ class CrewAIValidationOrchestrator:
                 sub_parameter=agent_info['sub_parameter'],
                 assigned_score=score,  # Now 0-100 scale
                 confidence_level=float(result_data.get('confidence_level', 0.7)),
-                explanation=result_data.get('explanation', 'Analysis completed'),
+                explanation=explanation_str,
                 assumptions=result_data.get('assumptions', []),
                 dependencies=agent_info['config'].get('dependencies', []),
                 weight_contribution=agent_info['config'].get('weight', 20),
@@ -1011,12 +1072,14 @@ class CrewAIValidationOrchestrator:
         
         for eval in high_scores[:3]:
             # Extract specific positive insights from actual explanations
-            explanation = eval.explanation.split('.')[0] if eval.explanation else f"Strong performance in {eval.sub_parameter}"
+            explanation_text = self._ensure_string_explanation(eval.explanation) if eval.explanation else f"Strong performance in {eval.sub_parameter}"
+            explanation = explanation_text.split('.')[0] if explanation_text else f"Strong performance in {eval.sub_parameter}"
             key_insights.append(f"{eval.sub_parameter} ({eval.assigned_score:.1f}/5.0): {explanation}")
         
         for eval in low_scores[:3]:
             # Extract specific concerns from actual explanations
-            explanation = eval.explanation.split('.')[0] if eval.explanation else f"Challenges identified in {eval.sub_parameter}"
+            explanation_text = self._ensure_string_explanation(eval.explanation) if eval.explanation else f"Challenges identified in {eval.sub_parameter}"
+            explanation = explanation_text.split('.')[0] if explanation_text else f"Challenges identified in {eval.sub_parameter}"
             major_concerns.append(f"{eval.sub_parameter} ({eval.assigned_score:.1f}/5.0): {explanation}")
         
         # Generate market context from actual cluster scores
@@ -1081,7 +1144,8 @@ This concept {'demonstrates strong potential for success with proper execution' 
             for param, param_score in top_performers:
                 eval_obj = next((e for e in cluster_evaluations if e.sub_parameter == param), None)
                 if eval_obj and eval_obj.explanation:
-                    explanation = eval_obj.explanation.split('.')[0]  # First sentence
+                    explanation_text = self._ensure_string_explanation(eval_obj.explanation)
+                    explanation = explanation_text.split('.')[0] if explanation_text else "Strong performance in this area"  # First sentence
                     top_insights.append(f"{param} ({param_score:.1f}/5.0): {explanation}")
                 else:
                     top_insights.append(f"{param} ({param_score:.1f}/5.0): Strong performance in this area")
@@ -1089,7 +1153,8 @@ This concept {'demonstrates strong potential for success with proper execution' 
             for param, param_score in bottom_performers:
                 eval_obj = next((e for e in cluster_evaluations if e.sub_parameter == param), None)
                 if eval_obj and eval_obj.explanation:
-                    explanation = eval_obj.explanation.split('.')[0]  # First sentence
+                    explanation_text = self._ensure_string_explanation(eval_obj.explanation)
+                    explanation = explanation_text.split('.')[0] if explanation_text else "Areas for improvement identified"  # First sentence
                     bottom_insights.append(f"{param} ({param_score:.1f}/5.0): {explanation}")
                 else:
                     bottom_insights.append(f"{param} ({param_score:.1f}/5.0): Areas for improvement identified")
@@ -1122,7 +1187,8 @@ CLUSTER ASSESSMENT:
         if not recommendations:
             low_score_areas = sorted([e for e in evaluations if e.assigned_score <= 2.5], key=lambda x: x.assigned_score)
             for eval in low_score_areas[:5]:
-                explanation = eval.explanation.split('.')[0] if eval.explanation else f"requires attention"
+                explanation_text = self._ensure_string_explanation(eval.explanation) if eval.explanation else "requires attention"
+                explanation = explanation_text.split('.')[0] if explanation_text else "requires attention"
                 recommendations.append(f"Improve {eval.sub_parameter}: {explanation}")
         
         # Remove duplicates and prioritize
@@ -1154,7 +1220,8 @@ CLUSTER ASSESSMENT:
         if not risks:
             low_score_areas = sorted([e for e in evaluations if e.assigned_score <= 2.0], key=lambda x: x.assigned_score)
             for eval in low_score_areas[:3]:
-                explanation = eval.explanation.split('.')[0] if eval.explanation else f"shows concerning results"
+                explanation_text = self._ensure_string_explanation(eval.explanation) if eval.explanation else "shows concerning results"
+                explanation = explanation_text.split('.')[0] if explanation_text else "shows concerning results"
                 risks.append(f"Risk in {eval.sub_parameter}: {explanation}")
         
         # Remove duplicates and prioritize
