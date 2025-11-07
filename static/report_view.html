@@ -370,6 +370,15 @@
                 }
                 
                 const aiData = await aiResponse.json();
+                
+                // Show cache indicator if using cached report
+                if (aiData.cached) {
+                    const cacheDate = aiData.generated_at ? new Date(aiData.generated_at).toLocaleString() : 'previously';
+                    console.log(`✅ Using cached AI report (generated ${cacheDate})`);
+                } else {
+                    console.log(`🔄 Generated new AI report`);
+                }
+                
                 renderAIReport(aiData.ai_report, reportData);
                 
             } catch (error) {

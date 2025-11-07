@@ -691,6 +691,59 @@ class DatabaseManager:
             logger.error(f"❌ Failed to get report by ID: {e}")
             return None
     
+    def get_ai_report(self, report_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get cached AI-generated report for a validation report
+        Returns None if no cached report exists
+        """
+        try:
+            collection = self.db.validation_reports
+            report = collection.find_one(
+                {"_id": ObjectId(report_id)},
+                {"ai_generated_report": 1, "ai_report_generated_at": 1}
+            )
+            
+            if report and report.get("ai_generated_report"):
+                return {
+                    "ai_report": report.get("ai_generated_report"),
+                    "generated_at": report.get("ai_report_generated_at"),
+                    "cached": True
+                }
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to get AI report: {e}")
+            return None
+    
+    def save_ai_report(self, report_id: str, ai_report: Dict[str, Any]) -> bool:
+        """
+        Save AI-generated report to MongoDB for caching
+        Returns True if successful, False otherwise
+        """
+        try:
+            collection = self.db.validation_reports
+            result = collection.update_one(
+                {"_id": ObjectId(report_id)},
+                {
+                    "$set": {
+                        "ai_generated_report": ai_report,
+                        "ai_report_generated_at": datetime.now(timezone.utc)
+                    }
+                }
+            )
+            
+            if result.modified_count > 0:
+                logger.info(f"✅ Saved AI report cache for report {report_id}")
+                return True
+            else:
+                logger.warning(f"⚠️ Report {report_id} not found when saving AI report")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Failed to save AI report: {e}")
+            return False
+    
     def close_connection(self):
         """Close MongoDB connection"""
         if self.client:

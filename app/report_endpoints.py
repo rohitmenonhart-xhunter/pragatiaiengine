@@ -111,6 +111,7 @@ def register_report_endpoints(app):
         """
         Generate AI-written comprehensive report from agent conversations
         Uses gpt-4.1-mini to create detailed bullet-pointed report
+        Caches the result in MongoDB - only generates on first request
         """
         try:
             db_manager = get_database_manager()
@@ -119,6 +120,19 @@ def register_report_endpoints(app):
                     "error": "Database not available"
                 }), 503
             
+            # Check if cached AI report exists
+            cached_report = db_manager.get_ai_report(report_id)
+            if cached_report:
+                logger.info(f"✅ Returning cached AI report for {report_id}")
+                return jsonify({
+                    "success": True,
+                    "report_id": report_id,
+                    "ai_report": cached_report["ai_report"],
+                    "cached": True,
+                    "generated_at": cached_report["generated_at"].isoformat() if cached_report.get("generated_at") else None
+                })
+            
+            # No cached report - need to generate
             report = db_manager.get_report_by_id(report_id)
             
             if not report:
@@ -149,7 +163,7 @@ def register_report_endpoints(app):
                 }), 404
             
             # Generate AI-written report using gpt-4.1-mini
-            logger.info(f"Generating AI report for {report_id} using {len(processed_data['all_conversations'])} conversations")
+            logger.info(f"🔄 Generating new AI report for {report_id} using {len(processed_data['all_conversations'])} conversations")
             
             writer = AIReportWriter(progress_callback=None)
             ai_report = writer.write_comprehensive_report(
@@ -157,13 +171,20 @@ def register_report_endpoints(app):
                 processed_data['metadata']
             )
             
-            logger.info(f"✅ AI report generated successfully for {report_id}")
+            # Save to MongoDB for caching
+            save_success = db_manager.save_ai_report(report_id, ai_report)
+            if save_success:
+                logger.info(f"✅ AI report generated and cached for {report_id}")
+            else:
+                logger.warning(f"⚠️ AI report generated but failed to cache for {report_id}")
             
             return jsonify({
                 "success": True,
                 "report_id": report_id,
                 "ai_report": ai_report,
-                "conversations_used": len(processed_data['all_conversations'])
+                "conversations_used": len(processed_data['all_conversations']),
+                "cached": False,
+                "saved_to_db": save_success
             })
             
         except Exception as e:
