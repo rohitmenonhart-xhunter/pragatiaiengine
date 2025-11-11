@@ -94,7 +94,7 @@ class UserProfileManager:
             }
             
             # Save to database
-            if self.db_manager:
+            if self.db_manager is not None and self.db_manager.db is not None:
                 try:
                     # Check if profile exists
                     existing_profile = self.db_manager.db.user_profiles.find_one(
@@ -137,7 +137,7 @@ class UserProfileManager:
             User profile or None if not found
         """
         try:
-            if not self.db_manager:
+            if self.db_manager is None or self.db_manager.db is None:
                 return None
             
             profile = self.db_manager.db.user_profiles.find_one({"user_id": user_id})
@@ -171,7 +171,7 @@ class UserProfileManager:
             report_id: Report ID in database
         """
         try:
-            if not self.db_manager:
+            if self.db_manager is None or self.db_manager.db is None:
                 return
             
             validation_entry = {
@@ -353,9 +353,14 @@ class UserProfileManager:
         return round(completeness, 1)
 
 
+# Singleton instance storage
+_profile_manager_instance: Optional[UserProfileManager] = None
+
+
 def get_user_profile_manager() -> UserProfileManager:
     """Get singleton instance of user profile manager"""
-    if not hasattr(get_user_profile_manager, "_instance"):
-        get_user_profile_manager._instance = UserProfileManager()
-    return get_user_profile_manager._instance
+    global _profile_manager_instance
+    if _profile_manager_instance is None:
+        _profile_manager_instance = UserProfileManager()
+    return _profile_manager_instance
 

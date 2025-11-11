@@ -763,15 +763,15 @@ Return JSON:
         return "\n".join(lines) if lines else "No cluster data"
     
     def _get_investment_decision(self, score: float) -> str:
-        """Get investment recommendation"""
+        """Get investment recommendation - strict evaluation based on expert consensus"""
         if score >= 75:
             return "STRONG YES - Recommended for investment"
-        elif score >= 60:
+        elif score >= 65:
             return "YES WITH CONDITIONS - Proceed with improvements"
-        elif score >= 45:
+        elif score >= 50:
             return "MAYBE - Significant concerns to address"
         else:
-            return "NOT RECOMMENDED - Fundamental issues present"
+            return "NO - NOT RECOMMENDED - Fundamental issues present"
     
     def _create_fallback_cluster_report(self, cluster_name: str, conversations: List[Dict]) -> Dict:
         """Create fallback report if AI writing fails"""

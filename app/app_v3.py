@@ -77,6 +77,13 @@ def health_check():
         }), 500
 
 
+@app.route('/logos/<path:filename>')
+def serve_logo(filename):
+    """Serve logo files from the logos directory"""
+    logos_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logos')
+    return send_from_directory(logos_dir, filename)
+
+
 @app.route('/api/validate-idea', methods=['POST'])
 def validate_idea_endpoint():
     """
@@ -298,7 +305,8 @@ def validate_pitch_deck():
         
         # Validate file extension
         allowed_extensions = {'.pdf', '.ppt', '.pptx'}
-        file_ext = os.path.splitext(file.filename)[1].lower()
+        filename = file.filename or ''
+        file_ext = os.path.splitext(filename)[1].lower()
         
         if file_ext not in allowed_extensions:
             return jsonify({
@@ -513,11 +521,8 @@ def generate_pdf_report():
                 "error": "Both idea_name and idea_concept are required"
             }), 400
         
-        # Run validation first
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(validate_idea(idea_name, idea_concept))
-        loop.close()
+        # Run validation (synchronous method)
+        result = validate_idea(idea_name, idea_concept)
         
         # Generate PDF
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -535,9 +540,9 @@ def generate_pdf_report():
             "pdf_url": f"/static/reports/{filename}",
             "filename": filename,
             "validation_result": {
-                "overall_score": result.overall_score,
-                "validation_outcome": result.validation_outcome.value,
-                "total_agents_consulted": result.total_agents_consulted
+                "overall_score": result.get("overall_score", 0),
+                "validation_outcome": result.get("validation_outcome", "UNKNOWN"),
+                "total_agents_consulted": result.get("api_calls_made", 0)
             }
         })
         
@@ -632,7 +637,14 @@ def broadcast_agent_message(agent_name, message, message_type="info"):
 
 # Make broadcast function globally available
 import builtins
-builtins.broadcast_agent_message = broadcast_agent_message
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # For type checking only
+    pass
+else:
+    # At runtime, add to builtins
+    builtins.broadcast_agent_message = broadcast_agent_message  # type: ignore
 
 
 if __name__ == '__main__':
